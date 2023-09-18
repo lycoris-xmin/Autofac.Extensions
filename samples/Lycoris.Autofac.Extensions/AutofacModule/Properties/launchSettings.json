@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "AutofacModule": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:53241;http://localhost:53242"
+    }
+  }
+}

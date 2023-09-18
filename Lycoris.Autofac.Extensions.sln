@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33829.357
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BC70EE21-82D2-4404-8B85-6E7E17C16926}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{997E2E6A-F0AA-422E-A707-CC16A1A51812}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lycoris.Autofac.Extensions", "src\Lycoris.Autofac.Extensions\Lycoris.Autofac.Extensions.csproj", "{8E7E4A84-DDAC-4E4B-A055-8FCF1110AF6C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutofacModule", "samples\Lycoris.Autofac.Extensions\AutofacModule\AutofacModule.csproj", "{BFFBF884-F7C7-49AD-953D-1CF6F4326EDE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutofacSample", "samples\Lycoris.Autofac.Extensions\AutofacSample\AutofacSample.csproj", "{268F8997-5DCF-4860-AE85-DD6948C888BE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8E7E4A84-DDAC-4E4B-A055-8FCF1110AF6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E7E4A84-DDAC-4E4B-A055-8FCF1110AF6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E7E4A84-DDAC-4E4B-A055-8FCF1110AF6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E7E4A84-DDAC-4E4B-A055-8FCF1110AF6C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFFBF884-F7C7-49AD-953D-1CF6F4326EDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFFBF884-F7C7-49AD-953D-1CF6F4326EDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFFBF884-F7C7-49AD-953D-1CF6F4326EDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFFBF884-F7C7-49AD-953D-1CF6F4326EDE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{268F8997-5DCF-4860-AE85-DD6948C888BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{268F8997-5DCF-4860-AE85-DD6948C888BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{268F8997-5DCF-4860-AE85-DD6948C888BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{268F8997-5DCF-4860-AE85-DD6948C888BE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8E7E4A84-DDAC-4E4B-A055-8FCF1110AF6C} = {BC70EE21-82D2-4404-8B85-6E7E17C16926}
+		{BFFBF884-F7C7-49AD-953D-1CF6F4326EDE} = {997E2E6A-F0AA-422E-A707-CC16A1A51812}
+		{268F8997-5DCF-4860-AE85-DD6948C888BE} = {997E2E6A-F0AA-422E-A707-CC16A1A51812}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6D16D403-6E3F-49FE-9D54-D150A2B4F113}
+	EndGlobalSection
+EndGlobal
