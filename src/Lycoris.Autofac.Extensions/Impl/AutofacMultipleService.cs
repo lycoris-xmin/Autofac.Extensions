@@ -32,12 +32,10 @@ namespace Lycoris.Autofac.Extensions.Impl
         public T GetService<T>(string name) where T : notnull
         {
             var context = _serviceProvider.GetService<IComponentContext>();
-            var service = context.ResolveNamed<T>(name);
 
-            if (service == null)
-                throw new ArgumentNullException($"the interface implementation named:{name} could not be found");
+            var service = context!.ResolveNamed<T>(name);
 
-            return service;
+            return service == null ? throw new ArgumentNullException($"the interface implementation named:{name} could not be found") : service;
         }
 
         /// <summary>
@@ -51,7 +49,8 @@ namespace Lycoris.Autofac.Extensions.Impl
             try
             {
                 var context = _serviceProvider.GetService<IComponentContext>();
-                return context.ResolveNamed<T>(name);
+
+                return context!.ResolveNamed<T>(name);
             }
             catch
             {

@@ -290,7 +290,7 @@ namespace Lycoris.Autofac.Extensions.Extensions
 
             // 允许Aop拦截,且当前要注入的非Aop拦截服务
             if (option.EnableInterceptor && !option.IsInterceptor && interceptors != null && interceptors.Any())
-                build = build.EnableInterfaceInterceptors().InterceptedBy(interceptors);
+                build = build.EnableInterfaceInterceptors().InterceptedBy(interceptors!);
 
             return build;
         }
@@ -324,7 +324,7 @@ namespace Lycoris.Autofac.Extensions.Extensions
 
             // 允许Aop拦截,且当前要注入的非Aop拦截服务
             if (option.EnableInterceptor && !option.IsInterceptor && interceptors != null && interceptors.Any())
-                build = build.EnableInterfaceInterceptors().InterceptedBy(interceptors);
+                build = build.EnableInterfaceInterceptors().InterceptedBy(interceptors!);
 
             return build;
         }
@@ -419,9 +419,9 @@ namespace Lycoris.Autofac.Extensions.Extensions
                     var tmp = item.DistinctBy(x => x.AsType).ToList();
                     servicesTemp.AddRange(tmp);
                 }
-                else
+                else if (item.Any())
                 {
-                    servicesTemp.Add(item.FirstOrDefault());
+                    servicesTemp.Add(item.FirstOrDefault()!);
                 }
             }
 
