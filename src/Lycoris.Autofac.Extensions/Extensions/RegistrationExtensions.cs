@@ -404,7 +404,7 @@ namespace Lycoris.Autofac.Extensions.Extensions
         /// <returns></returns>
         internal static List<LycorisRegisterService> ServiceDeduplication(this List<LycorisRegisterService>? services)
         {
-            if (services == null || services.Any())
+            if (services == null || !services.Any())
                 return new List<LycorisRegisterService>();
 
             var groups = services.GroupBy(x => x.Type).ToList();

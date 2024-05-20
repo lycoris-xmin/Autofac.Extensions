@@ -9,7 +9,7 @@
     <Authors>Lycoris</Authors>
     <Description>Autofac封装扩展，支持特性自动注册，也支持手动注册，兼容原生Module</Description>
     <PackageIcon>lycoris-nuget-logo.png</PackageIcon>
-    <VersionPrefix>8.0.0-rc</VersionPrefix>
+    <VersionPrefix>8.0.0</VersionPrefix>
     <PackageReadmeFile>Readme.md</PackageReadmeFile>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
