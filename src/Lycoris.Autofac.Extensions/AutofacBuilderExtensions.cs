@@ -23,7 +23,7 @@ namespace Lycoris.Autofac.Extensions
             var autofacBuilder = new AutofacBuilder();
 
             // 执行注册配置构建操作
-            configure(autofacBuilder);
+            configure.Invoke(autofacBuilder);
 
             // 执行系统相关配置操作
             autofacBuilder.MicrosoftExtensionsBuilder(appBuilder);

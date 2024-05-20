@@ -12,7 +12,7 @@
 
         public T? Test(T input)
         {
-            serService.Test(input!.ToString());
+            serService.Test(input!.ToString()!);
             return input;
         }
     }
