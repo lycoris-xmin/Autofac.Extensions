@@ -2,6 +2,8 @@
 using Autofac.Extensions.DependencyInjection;
 using Lycoris.Autofac.Extensions.Extensions;
 using Lycoris.Autofac.Extensions.Impl;
+using Lycoris.Autofac.Extensions.TaskExecutor;
+using Lycoris.Autofac.Extensions.TaskExecutor.Impl;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 
@@ -32,7 +34,13 @@ namespace Lycoris.Autofac.Extensions
             appBuilder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory())
                       .ConfigureContainer<ContainerBuilder>(builder =>
                       {
-                          // 注册多实现类服务配置
+
+                          if (autofacBuilder.EnabledTaskExecutor)
+                          {
+                              builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().SingleInstance();
+                              builder.RegisterType<AsyncTaskExecutor>().As<IAsyncTaskExecutor>().SingleInstance();
+                          }
+
                           if (autofacBuilder.EnabledLycorisMultipleService)
                               builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().SingleInstance();
 

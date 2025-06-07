@@ -25,13 +25,15 @@ namespace Lycoris.Autofac.Extensions
         /// <summary>
         /// LycorisAutofac扩展模块注册容器
         /// </summary>
-        internal List<LycorisRegisterModule> LycorisRegisterModules { get; set; } = new();
+        internal List<AutofacRegisterModule> LycorisRegisterModules { get; set; } = new();
 
         /// <summary>
         /// 多实现类服务获取服务 默认：false
         /// 考虑到部分人使用可能有自己的处理方法，所以此处不强制要求注册，可由配置进行注册
         /// </summary>
         public bool EnabledLycorisMultipleService { get; set; } = false;
+
+        internal bool EnabledTaskExecutor { get; set; } = false;
 
         /// <summary>
         /// Autofac原生Module注册
@@ -47,7 +49,7 @@ namespace Lycoris.Autofac.Extensions
         /// 添加Lycoris扩展Module
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        public AutofacBuilder AddLycorisRegisterModule<T>() where T : LycorisRegisterModule, new()
+        public AutofacBuilder AddRegisterModule<T>() where T : AutofacRegisterModule, new()
         {
             LycorisRegisterModules.Add(new T());
             return this;
@@ -75,6 +77,27 @@ namespace Lycoris.Autofac.Extensions
                 });
             }
 
+            return this;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public AutofacBuilder AddTaskExecutor()
+        {
+            this.EnabledTaskExecutor = true;
+            this.AddMultipleService();
+            return this;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public AutofacBuilder AddMultipleService()
+        {
+            this.EnabledLycorisMultipleService = true;
             return this;
         }
 
