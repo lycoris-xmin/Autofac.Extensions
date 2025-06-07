@@ -8,10 +8,11 @@
 		<Description>Autofac封装扩展，支持特性自动注册，也支持手动注册，兼容原生Module</Description>
 		<PackageIcon>
 		</PackageIcon>
-		<VersionPrefix>8.0.0</VersionPrefix>
+		<VersionPrefix>8.1.0</VersionPrefix>
 		<PackageReadmeFile>
 		</PackageReadmeFile>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	</PropertyGroup>
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
