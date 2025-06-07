@@ -11,7 +11,7 @@ namespace Lycoris.Autofac.Extensions
     /// <summary>
     /// Lycoris扩展模块
     /// </summary>
-    public abstract class LycorisRegisterModule
+    public abstract class AutofacRegisterModule
     {
         /// <summary>
         /// Host 扩展服务注册
@@ -58,7 +58,7 @@ namespace Lycoris.Autofac.Extensions
                     {
                         item.Interceptors ??= new List<InterceptorOption>();
                         item.Interceptors.AddRange(Builder.InterceptorOptions);
-                        item.Interceptors = item.Interceptors.DistinctBy(x => x.Type).ToList();
+                        item.Interceptors = item.Interceptors.OrderBy(x => x.Order).DistinctBy(x => x.Type).ToList();
                     }
                 }
             }

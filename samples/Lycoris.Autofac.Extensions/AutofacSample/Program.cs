@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.UseAutofacExtensions(builder =>
 {
     builder.EnabledLycorisMultipleService = true;
-    builder.AddLycorisRegisterModule<ApplicationModule>();
+    builder.AddRegisterModule<ApplicationModule>();
 });
 
 // Add services to the container.

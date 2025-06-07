@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AutofacModule
 {
-    public class ApplicationModule : LycorisRegisterModule
+    public class ApplicationModule : AutofacRegisterModule
     {
         public override void ModuleRegister(LycorisModuleBuilder builder)
         {
