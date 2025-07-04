@@ -4,6 +4,7 @@ using Castle.DynamicProxy;
 using Lycoris.Autofac.Extensions.Extensions;
 using Lycoris.Autofac.Extensions.Options;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Hosting;
 
 namespace Lycoris.Autofac.Extensions
 {
@@ -112,6 +113,21 @@ namespace Lycoris.Autofac.Extensions
                 item.HostRegister(builder.Host);
                 item.SerivceRegister(builder.Services);
             }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="builder"></param>
+        internal void MicrosoftExtensionsBuilder(IHostBuilder builder)
+        {
+            builder.ConfigureServices((_, services) =>
+            {
+                foreach (var item in LycorisRegisterModules)
+                {
+                    item.SerivceRegister(services);
+                }
+            });
         }
 
         /// <summary>
