@@ -9,7 +9,7 @@ namespace Lycoris.Autofac.Extensions.Impl
     /// <summary>
     /// Lycoris扩展构建服务
     /// </summary>
-    public sealed class LycorisModuleBuilder
+    public sealed class ModuleBuilder
     {
         internal readonly List<LycorisRegisterService> RegisterContainer = new();
         internal readonly List<InterceptorOption> InterceptorOptions = new();
@@ -22,7 +22,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="order"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        public LycorisModuleBuilder InterceptedBy<TInterceptor>(int? order = null) where TInterceptor : class, IInterceptor
+        public ModuleBuilder InterceptedBy<TInterceptor>(int? order = null) where TInterceptor : class, IInterceptor
         {
             if (order.HasValue && order.Value < 0)
                 throw new ArgumentOutOfRangeException(nameof(order), "range must be greater than or equal to 0");
@@ -39,7 +39,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterTransient<T>() where T : class
+        public ModuleBuilder RegisterTransient<T>() where T : class
             => RegisterSelf(typeof(T), ServiceLifeTime.Transient);
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <typeparam name="T"></typeparam>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterTransient<T>(Action<AutofacSingleBuilder> configure) where T : class
+        public ModuleBuilder RegisterTransient<T>(Action<AutofacSingleBuilder> configure) where T : class
             => RegisterSelf(typeof(T), ServiceLifeTime.Transient, configure);
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <typeparam name="TImpl"></typeparam>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterTransient<T, TImpl>() where TImpl : T where T : class
+        public ModuleBuilder RegisterTransient<T, TImpl>() where TImpl : T where T : class
         {
             if (!typeof(T).IsInterface)
                 throw new ArgumentException("must be an interface", nameof(T));
@@ -74,7 +74,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="named"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterTransient<T, TImpl>([NotNull] string named) where TImpl : T where T : class
+        public ModuleBuilder RegisterTransient<T, TImpl>([NotNull] string named) where TImpl : T where T : class
         {
             if (!typeof(T).IsInterface)
                 throw new ArgumentException("must be an interface", nameof(T));
@@ -90,7 +90,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="configure"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterTransient<T, TImpl>(Action<AutofacSingleBuilder> configure) where TImpl : T where T : class
+        public ModuleBuilder RegisterTransient<T, TImpl>(Action<AutofacSingleBuilder> configure) where TImpl : T where T : class
         {
             if (!typeof(T).IsInterface)
                 throw new ArgumentException("must be an interface", nameof(T));
@@ -108,7 +108,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// 注册瞬态服务
         /// </summary>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterTransient(Type type)
+        public ModuleBuilder RegisterTransient(Type type)
             => RegisterSelf(type, ServiceLifeTime.Transient);
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="type"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterTransient(Type type, Action<AutofacSingleBuilder> configure)
+        public ModuleBuilder RegisterTransient(Type type, Action<AutofacSingleBuilder> configure)
             => RegisterSelf(type, ServiceLifeTime.Transient, configure);
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="service"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterTransient(Type @interface, Type service)
+        public ModuleBuilder RegisterTransient(Type @interface, Type service)
             => RegisterAsType(@interface, service, ServiceLifeTime.Transient);
 
         /// <summary>
@@ -138,7 +138,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="named"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterTransient(Type @interface, Type service, [NotNull] string named)
+        public ModuleBuilder RegisterTransient(Type @interface, Type service, [NotNull] string named)
             => RegisterAsType(@interface, service, ServiceLifeTime.Transient, named);
 
         /// <summary>
@@ -149,7 +149,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="configure"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterTransient(Type @interface, Type service, Action<AutofacSingleBuilder> configure)
+        public ModuleBuilder RegisterTransient(Type @interface, Type service, Action<AutofacSingleBuilder> configure)
             => RegisterAsType(@interface, service, ServiceLifeTime.Transient, configure);
 
 
@@ -158,7 +158,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterScoped<T>() where T : class
+        public ModuleBuilder RegisterScoped<T>() where T : class
           => RegisterSelf(typeof(T), ServiceLifeTime.Scoped);
 
         /// <summary>
@@ -167,7 +167,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <typeparam name="T"></typeparam>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterScoped<T>(Action<AutofacSingleBuilder> configure) where T : class
+        public ModuleBuilder RegisterScoped<T>(Action<AutofacSingleBuilder> configure) where T : class
           => RegisterSelf(typeof(T), ServiceLifeTime.Scoped, configure);
 
         /// <summary>
@@ -177,7 +177,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <typeparam name="TImpl"></typeparam>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterScoped<T, TImpl>() where TImpl : T where T : class
+        public ModuleBuilder RegisterScoped<T, TImpl>() where TImpl : T where T : class
         {
             if (!typeof(T).IsInterface)
                 throw new ArgumentException("must be an interface", nameof(T));
@@ -193,7 +193,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="named"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterScoped<T, TImpl>(string named) where TImpl : T where T : class
+        public ModuleBuilder RegisterScoped<T, TImpl>(string named) where TImpl : T where T : class
         {
             if (!typeof(T).IsInterface)
                 throw new ArgumentException("must be an interface", nameof(T));
@@ -209,7 +209,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="configure"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterScoped<T, TImpl>(Action<AutofacSingleBuilder> configure) where TImpl : T where T : class
+        public ModuleBuilder RegisterScoped<T, TImpl>(Action<AutofacSingleBuilder> configure) where TImpl : T where T : class
         {
             if (!typeof(T).IsInterface)
                 throw new ArgumentException("must be an interface", nameof(T));
@@ -221,7 +221,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// 注册作用域服务
         /// </summary>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterScoped(Type type)
+        public ModuleBuilder RegisterScoped(Type type)
             => RegisterSelf(type, ServiceLifeTime.Scoped);
 
         /// <summary>
@@ -230,7 +230,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="type"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterScoped(Type type, Action<AutofacSingleBuilder> configure)
+        public ModuleBuilder RegisterScoped(Type type, Action<AutofacSingleBuilder> configure)
             => RegisterSelf(type, ServiceLifeTime.Scoped, configure);
 
         /// <summary>
@@ -240,7 +240,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="service"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterScoped(Type @interface, Type service)
+        public ModuleBuilder RegisterScoped(Type @interface, Type service)
             => RegisterAsType(@interface, service, ServiceLifeTime.Scoped);
 
         /// <summary>
@@ -251,7 +251,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="named"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterScoped(Type @interface, Type service, [NotNull] string named)
+        public ModuleBuilder RegisterScoped(Type @interface, Type service, [NotNull] string named)
             => RegisterAsType(@interface, service, ServiceLifeTime.Scoped, named);
 
         /// <summary>
@@ -262,7 +262,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="configure"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterScoped(Type @interface, Type service, Action<AutofacSingleBuilder> configure)
+        public ModuleBuilder RegisterScoped(Type @interface, Type service, Action<AutofacSingleBuilder> configure)
             => RegisterAsType(@interface, service, ServiceLifeTime.Scoped, configure);
 
 
@@ -271,7 +271,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterSingleton<T>() where T : class
+        public ModuleBuilder RegisterSingleton<T>() where T : class
           => RegisterSelf(typeof(T), ServiceLifeTime.Singleton);
 
         /// <summary>
@@ -280,7 +280,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <typeparam name="T"></typeparam>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterSingleton<T>(Action<AutofacSingleBuilder> configure) where T : class
+        public ModuleBuilder RegisterSingleton<T>(Action<AutofacSingleBuilder> configure) where T : class
           => RegisterSelf(typeof(T), ServiceLifeTime.Singleton, configure);
 
         /// <summary>
@@ -290,7 +290,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <typeparam name="TImpl"></typeparam>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterSingleton<T, TImpl>() where TImpl : T where T : class
+        public ModuleBuilder RegisterSingleton<T, TImpl>() where TImpl : T where T : class
         {
             if (!typeof(T).IsInterface)
                 throw new ArgumentException("must be an interface", nameof(T));
@@ -306,7 +306,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="named"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterSingleton<T, TImpl>(string named) where TImpl : T where T : class
+        public ModuleBuilder RegisterSingleton<T, TImpl>(string named) where TImpl : T where T : class
         {
             if (!typeof(T).IsInterface)
                 throw new ArgumentException("must be an interface", nameof(T));
@@ -322,7 +322,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="configure"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterSingleton<T, TImpl>(Action<AutofacSingleBuilder> configure) where TImpl : T where T : class
+        public ModuleBuilder RegisterSingleton<T, TImpl>(Action<AutofacSingleBuilder> configure) where TImpl : T where T : class
         {
             if (!typeof(T).IsInterface)
                 throw new ArgumentException("must be an interface", nameof(T));
@@ -337,7 +337,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// 注册单例服务
         /// </summary>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterSingleton(Type type)
+        public ModuleBuilder RegisterSingleton(Type type)
             => RegisterSelf(type, ServiceLifeTime.Singleton);
 
         /// <summary>
@@ -346,7 +346,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="type"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterSingleton(Type type, Action<AutofacSingleBuilder> configure)
+        public ModuleBuilder RegisterSingleton(Type type, Action<AutofacSingleBuilder> configure)
             => RegisterSelf(type, ServiceLifeTime.Singleton, configure);
 
         /// <summary>
@@ -356,7 +356,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="service"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterSingleton(Type @interface, Type service)
+        public ModuleBuilder RegisterSingleton(Type @interface, Type service)
             => RegisterAsType(@interface, service, ServiceLifeTime.Singleton);
 
         /// <summary>
@@ -367,7 +367,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="named"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterSingleton(Type @interface, Type service, [NotNull] string named)
+        public ModuleBuilder RegisterSingleton(Type @interface, Type service, [NotNull] string named)
             => RegisterAsType(@interface, service, ServiceLifeTime.Singleton, named);
 
         /// <summary>
@@ -378,7 +378,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="configure"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public LycorisModuleBuilder RegisterSingleton(Type @interface, Type service, Action<AutofacSingleBuilder> configure)
+        public ModuleBuilder RegisterSingleton(Type @interface, Type service, Action<AutofacSingleBuilder> configure)
             => RegisterAsType(@interface, service, ServiceLifeTime.Singleton, configure);
 
 
@@ -387,7 +387,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterInterceptor<T>() where T : class, IInterceptor
+        public ModuleBuilder RegisterInterceptor<T>() where T : class, IInterceptor
         {
             RegisterContainer.Add(new LycorisRegisterService()
             {
@@ -405,7 +405,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterAsyncInterceptor<T>() where T : class, IAsyncInterceptor
+        public ModuleBuilder RegisterAsyncInterceptor<T>() where T : class, IAsyncInterceptor
         {
             RegisterContainer.Add(new LycorisRegisterService()
             {
@@ -424,7 +424,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterHostedService<T>() where T : class, IHostedService
+        public ModuleBuilder RegisterHostedService<T>() where T : class, IHostedService
         {
             RegisterContainer.Add(new LycorisRegisterService()
             {
@@ -445,7 +445,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <typeparam name="T"></typeparam>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterAssemblyBy<T>(Action<RegisterAssemblyBuilder> configure) where T : class
+        public ModuleBuilder RegisterAssemblyBy<T>(Action<RegisterAssemblyBuilder> configure) where T : class
         {
             RegisterAssemblyBy(typeof(T), configure);
             return this;
@@ -457,7 +457,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="type"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public LycorisModuleBuilder RegisterAssemblyBy(Type type, Action<RegisterAssemblyBuilder> configure)
+        public ModuleBuilder RegisterAssemblyBy(Type type, Action<RegisterAssemblyBuilder> configure)
         {
             if (!type.IsClass && !type.IsInterface)
                 throw new Exception("type must be class or interface");
@@ -497,7 +497,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="type"></param>
         /// <param name="lifeTime"></param>
         /// <returns></returns>
-        private LycorisModuleBuilder RegisterSelf(Type type, ServiceLifeTime lifeTime)
+        private ModuleBuilder RegisterSelf(Type type, ServiceLifeTime lifeTime)
         {
             RegisterContainer.Add(new LycorisRegisterService()
             {
@@ -518,7 +518,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="lifeTime"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
-        private LycorisModuleBuilder RegisterSelf(Type type, ServiceLifeTime lifeTime, Action<AutofacSingleBuilder> configure)
+        private ModuleBuilder RegisterSelf(Type type, ServiceLifeTime lifeTime, Action<AutofacSingleBuilder> configure)
         {
             var builder = new AutofacSingleBuilder();
             configure(builder);
@@ -549,7 +549,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="lifeTime"></param>
         /// <param name="named"></param>
         /// <returns></returns>
-        private LycorisModuleBuilder RegisterAsType(Type @interface, Type service, ServiceLifeTime lifeTime, string? named = null)
+        private ModuleBuilder RegisterAsType(Type @interface, Type service, ServiceLifeTime lifeTime, string? named = null)
         {
             CheckServiceAssignableFrom(@interface, service);
 
@@ -574,7 +574,7 @@ namespace Lycoris.Autofac.Extensions.Impl
         /// <param name="lifeTime"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
-        private LycorisModuleBuilder RegisterAsType(Type @interface, Type service, ServiceLifeTime lifeTime, Action<AutofacSingleBuilder> configure)
+        private ModuleBuilder RegisterAsType(Type @interface, Type service, ServiceLifeTime lifeTime, Action<AutofacSingleBuilder> configure)
         {
             CheckServiceAssignableFrom(@interface, service);
 

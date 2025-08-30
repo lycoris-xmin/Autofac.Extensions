@@ -29,7 +29,7 @@ namespace Lycoris.Autofac.Extensions
         /// Lycoris扩展模块注册
         /// </summary>
         /// <param name="builder"></param>
-        public virtual void ModuleRegister(LycorisModuleBuilder builder) { }
+        public virtual void ModuleRegister(ModuleBuilder builder) { }
 
         /// <summary>
         /// 构建
@@ -38,7 +38,7 @@ namespace Lycoris.Autofac.Extensions
         /// <returns></returns>
         internal List<LycorisRegisterService> Build(List<InterceptorOption>? globalInterceptor = null)
         {
-            var Builder = new LycorisModuleBuilder();
+            var Builder = new ModuleBuilder();
 
             // 执行模块注册方法
             ModuleRegister(Builder);
@@ -84,7 +84,7 @@ namespace Lycoris.Autofac.Extensions
         /// </summary>
         /// <param name="assembly"></param>
         /// <param name="builder"></param>
-        private static void RegisterAssembly(Assembly assembly, LycorisModuleBuilder builder)
+        private static void RegisterAssembly(Assembly assembly, ModuleBuilder builder)
         {
             if (builder.AssemblyConfigure != null)
             {

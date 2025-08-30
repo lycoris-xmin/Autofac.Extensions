@@ -6,7 +6,7 @@ namespace AutofacModule
 {
     public class ApplicationModule : AutofacRegisterModule
     {
-        public override void ModuleRegister(LycorisModuleBuilder builder)
+        public override void ModuleRegister(ModuleBuilder builder)
         {
 
             builder.RegisterScoped(typeof(ITestGencService<>), typeof(TestGencService<>), "123");
