@@ -6,7 +6,6 @@ using Lycoris.Autofac.Extensions.TaskExecutor;
 using Lycoris.Autofac.Extensions.TaskExecutor.Impl;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
-using System.Reflection.PortableExecutable;
 
 namespace Lycoris.Autofac.Extensions
 {
@@ -75,19 +74,19 @@ namespace Lycoris.Autofac.Extensions
             hostBuilder.UseServiceProviderFactory(new AutofacServiceProviderFactory())
                        .ConfigureContainer<ContainerBuilder>(builder =>
                        {
-                       
+
                            if (autofacBuilder.EnabledTaskExecutor)
                            {
                                builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().SingleInstance();
                                builder.RegisterType<AsyncTaskExecutor>().As<IAsyncTaskExecutor>().SingleInstance();
                            }
-                       
+
                            if (autofacBuilder.EnabledLycorisMultipleService)
                                builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().SingleInstance();
-                       
+
                            // 获取所有待注册的服务信息
                            var services = autofacBuilder.GetAllLycorisRegisterService(builder);
-                       
+
                            // 服务注册
                            builder.ServiceRegister(services.ServiceDeduplication());
                        });
