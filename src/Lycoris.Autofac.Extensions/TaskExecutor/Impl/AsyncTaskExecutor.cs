@@ -14,10 +14,7 @@ namespace Lycoris.Autofac.Extensions.TaskExecutor.Impl
         /// 
         /// </summary>
         /// <param name="serviceScopeFactory"></param>
-        public AsyncTaskExecutor(IServiceScopeFactory serviceScopeFactory)
-        {
-            _serviceScopeFactory = serviceScopeFactory;
-        }
+        public AsyncTaskExecutor(IServiceScopeFactory serviceScopeFactory) => _serviceScopeFactory = serviceScopeFactory;
 
         #region ==== 公共方法 ====
 
