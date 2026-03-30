@@ -37,12 +37,12 @@ namespace Lycoris.Autofac.Extensions
 
                           if (autofacBuilder.EnabledTaskExecutor)
                           {
-                              builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().SingleInstance();
-                              builder.RegisterType<AsyncTaskExecutor>().As<IAsyncTaskExecutor>().SingleInstance();
+                              builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().InstancePerLifetimeScope();
+                              builder.RegisterType<AsyncTaskExecutor>().As<IAsyncTaskExecutor>().InstancePerLifetimeScope();
                           }
 
                           if (autofacBuilder.EnabledLycorisMultipleService)
-                              builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().SingleInstance();
+                              builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().InstancePerLifetimeScope();
 
                           // 获取所有待注册的服务信息
                           var services = autofacBuilder.GetAllLycorisRegisterService(builder);
@@ -77,12 +77,12 @@ namespace Lycoris.Autofac.Extensions
 
                            if (autofacBuilder.EnabledTaskExecutor)
                            {
-                               builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().SingleInstance();
-                               builder.RegisterType<AsyncTaskExecutor>().As<IAsyncTaskExecutor>().SingleInstance();
+                               builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().InstancePerLifetimeScope();
+                               builder.RegisterType<AsyncTaskExecutor>().As<IAsyncTaskExecutor>().InstancePerLifetimeScope();
                            }
 
                            if (autofacBuilder.EnabledLycorisMultipleService)
-                               builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().SingleInstance();
+                               builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().InstancePerLifetimeScope();
 
                            // 获取所有待注册的服务信息
                            var services = autofacBuilder.GetAllLycorisRegisterService(builder);
