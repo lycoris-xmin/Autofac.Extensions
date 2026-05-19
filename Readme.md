@@ -1,365 +1,592 @@
-## Autofac扩展 目前不支持控制器层相关的相关注册服务
+# Lycoris.Autofac.Extensions
 
+Autofac 封装扩展库，支持特性自动注册、手动注册、AOP 拦截器、程序集扫描、异步任务执行，兼容 Autofac 原生 Module。
 
-### 没有详细测试，本身也只是方便作者及作者朋友使用，可能存在某些特定情况下的bug，请各位使用的大佬手下留情
+[![NuGet](https://img.shields.io/nuget/v/Lycoris.Autofac.Extensions.svg)](https://www.nuget.org/packages/Lycoris.Autofac.Extensions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-### **一、替换系统自带的DI容器为Autofac**
+## 功能
 
+- **特性自动注册** — 通过 `[AutofacRegister]` 标注类即可自动注册，支持 `Transient`、`Scoped`、`Singleton` 三种生命周期
+- **手动注册** — 继承 `AutofacRegisterModule` 在 `ModuleRegister` 中手动注册服务
+- **Keyed 服务** — 支持 Autofac 8.x 的 `Keyed` 服务注册（任意对象作为键）
+- **多实现解析** — 同一接口多个实现通过 `IAutofacMultipleService` 按名称解析
+- **AOP 拦截器** — 基于 Castle.Core 的拦截器，支持同步/异步拦截、接口/类拦截、全局/模块/服务级拦截、拦截器排除
+- **程序集扫描** — 按基类、接口、命名约定批量注册，支持多次调用配置不同扫描规则
+- **异步任务执行器** — `IAsyncTaskExecutor` 在后台运行任务，支持延迟执行和自定义解析策略
+- **便捷注册** — 生命周期参数化注册、条件注册 `RegisterIf`、拦截器一键注册启用
+- **属性注入** — 支持 Autofac 原生属性注入
+- **原生 Module 兼容** — 可直接添加 Autofac 原生 `Module`
+
+## 安装
+
+```bash
+dotnet add package Lycoris.Autofac.Extensions
 ```
+
+依赖：.NET 8.0+、Autofac 8.3.0+、Castle.Core.AsyncInterceptor 2.1.0+
+
+## 快速开始
+
+```csharp
 var builder = WebApplication.CreateBuilder(args);
 
-// 替换系统自带的DI容器为Autofac
-// 注意 6.0.7 版本之后 这个位置没有Host了，因为需要支持自带的 IServiceCollection 的扩展服务注册
-// 6.0.8 支持自带的 ConfigureHostBuilder 的扩展服务注册
-builder.UseAutofacExtensions(builder =>
+// 替换系统 DI 容器为 Autofac
+builder.UseAutofacExtensions(opt =>
 {
-    // 多实现类服务获取服务 默认：false
-    // 启用后才能通过扩展的 IAutofacMultipleService 服务多实现类接口
-    // 没有设置的话，默认不注册该服务
-    builder.EnabledLycorisMultipleService = true;
-});
+    // 启用多实现服务解析（如需使用 IAutofacMultipleService）
+    opt.AddMultipleService();
 
-// Add services to the container.
+    // 注册 Lycoris 扩展模块
+    opt.AddRegisterModule<ApplicationModule>();
+
+    // 注册 Autofac 原生模块
+    opt.AddAutofacModule<MyAutofacModule>();
+
+    // 添加全局拦截器（可选）
+    opt.AddGlobalInterceptor<UnitOfWorkInterceptor>(0);
+});
 
 builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
 ```
 
+---
 
-### **二、服务注册**
-**服务注册依旧使用特性的方式处理，在需要注册的服务类上引用特性`[AutofacRegister(ServiceLifeTime.Scoped)]`**
+## 一、特性自动注册
 
-**`AutofacRegisterAttribute`特性属性详解**
+在要注册的服务类上添加 `[AutofacRegister]` 特性：
 
-- **`ServiceLifeTime`：服务生命周期,同系统的一样有：`Transient`,`Scoped`,`Singleton`三种**
-  
-- **`PropertiesAutowired`：属性注入，Autofac特有的注入方式，默认为false**
-  
-- **`EnableInterceptor`：开启AOP拦截支持，默认为false，只有开启了注册服务时候才会同时注入拦截器**
-
-- **`Self`：仅注册当前类不与接口绑定，适合模型类、Quartz的调度任务注册**
-  
-- **`Interface`：指定接口，当前类继承了多个接口时，可以通过设置此属性指定注册的接口**
-
-- **`Interceptor`：添加指定AOP拦截器,适合当前类库仅个别服务使用到某些固定的一个拦截器使用，该属性设置后，会默认开启AOP拦截支持，同样的指定的AOP拦截器也需要实现 `Castle.Core` 的 `IInterceptor` 接口**
-  
-- **`IsInterceptor`：当前服务是否为AOP服务**
-  
-**以下举几个比较常用的注册举例**
-
-- **1. 最常见的注册**
 ```csharp
-// 瞬态服务注册
+// 瞬态
 [AutofacRegister(ServiceLifeTime.Transient)]
-public class BlogAppService : IBlogAppService
-{
+public class BlogService : IBlogService { }
 
-}
-
-// 作用域服务注册
+// 作用域
 [AutofacRegister(ServiceLifeTime.Scoped)]
-public class BlogAppService : IBlogAppService
-{
+public class BlogService : IBlogService { }
 
-}
-
-// 单例服务注册
+// 单例
 [AutofacRegister(ServiceLifeTime.Singleton)]
-public class BlogAppService : IBlogAppService
-{
-
-}
+public class BlogService : IBlogService { }
 ```
 
-- **2. 继承了多个接口的的实现，想指定注册接口**
+### 特性属性
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `ServiceLifeTime` | `ServiceLifeTime` | — | 生命周期：`Transient`、`Scoped`、`Singleton` |
+| `Self` | `bool` | `false` | 仅注册自身类型，不绑定接口 |
+| `Interface` | `Type?` | `null` | 指定注册的接口（多接口时） |
+| `MultipleNamed` | `string?` | `null` | 多实现时的名称标识（`.Named()`） |
+| `Key` | `object?` | `null` | Autofac 8.x Keyed 服务键（与 `MultipleNamed` 互斥） |
+| `PropertiesAutowired` | `bool` | `false` | 启用属性注入 |
+| `EnableInterceptor` | `bool` | `false` | 启用 AOP 拦截 |
+| `Interceptor` | `Type?` | `null` | 指定 AOP 拦截器（设置后自动启用拦截） |
+| `InterceptorOrder` | `int?` | `null` | 拦截器执行优先级，数值越小优先级越高 |
+| `InterceptionType` | `InterceptionType` | `Interface` | AOP 拦截类型：`Interface`（接口代理，默认）或 `VirtualClass`（类虚方法代理） |
+| `ExcludeInterceptor` | `Type?` | `null` | 排除指定拦截器，该拦截器不会应用到当前服务 |
+| `IsInterceptor` | `bool` | `false` | 标记当前类为拦截器 |
+
+### 指定接口注册
+
+当实现类继承了多个接口，可以通过 `Interface` 属性明确指定注册哪个接口：
 
 ```csharp
-[AutofacRegister(ServiceLifeTime.Scoped, PropertiesAutowired = true, Interface = typeof(IBlogAppService))]
-public class BlogAppService : ApplicationBaseService<BlogAppService>, IBlogAppService, IBlogBaseAppService
-{
-
-}
+[AutofacRegister(ServiceLifeTime.Scoped, Interface = typeof(IBlogService))]
+public class BlogService : BaseService, IBlogService, IOtherService { }
 ```
 
-**如果继承了多个接口，没有指定，扩展默认取实现类最后继承的接口**
+如果不指定，扩展默认取**最后一个继承的接口**（代码中 `LastOrDefault()`）或**名称以类名结尾的接口**。
 
-**例1：**
+### 仅注册自身
+
+适用于模型类、Job 等不需要接口绑定的场景：
+
 ```csharp
-// 接口A
-public interface A
-{
-
-}
-
-// 接口B
-public interface B : A
-{
-
-}
-
-// 接口C
-public interface C : B
-{
-
-}
-
-// 实现类D
-public class D : C 
-{
-
-}
-
-// 以上情况，不指定注册接口的情况下，扩展默认取 接口C与实现类D进行注册
+[AutofacRegister(ServiceLifeTime.Singleton, Self = true)]
+public class MyJob { }
 ```
 
-**例2：**
-```csharp
-// 接口A
-public interface A
-{
+### 属性注入
 
-}
-
-// 接口B
-public interface B 
-{
-
-}
-
-// 接口C
-public interface C 
-{
-
-}
-
-// 实现类D
-public class D : B, A, C
-{
-
-}
-
-// 以上情况，不指定注册接口的情况下，扩展默认取 接口B与实现类D进行注册
-// 直观一点理解就是取离当前实现类最近的继承接口
-```
-
-
-- **3. 一个接口多个实现类**
-  
-```csharp
-// IBlogAppService 接口第一个实现类，利用 MultipleNamed 属性，进行区分指定
-[AutofacRegister(ServiceLifeTime.Scoped, MultipleNamed = "Blog.A")]
-public class BlogAAppService : ApplicationBaseService<BlogAppService>, IBlogAppService
-{
-
-}
-
-// IBlogAppService 接口第二个实现类，利用 MultipleNamed 属性，进行区分指定
-[AutofacRegister(ServiceLifeTime.Scoped, MultipleNamed = "Blog.B")]
-public class BlogBAppService : ApplicationBaseService<BlogAppService>, IBlogAppService
-{
-
-}
-```
-
-**使用扩展内服务 `IAutofacMultipleService` 进行指定的实现类获取**
-**注意：`6.0.8`版本及以后需要在添加扩展的时候，配置`EnabledLycorisMultipleService`属性为`true`，才能正常使用该服务，否则扩展不会注册 `IAutofacMultipleService` 服务**
-
-``` csharp
-public class Service : IService
-{
-    private readonly IBlogAppService _blogA;
-    private readonly IBlogAppService _blogB;
-
-    public Service(IAutofacMultipleService multipleService)
-    {
-        // 使用 GetService 获取服务时，如果服务找不到或者服务未注册会抛出 ArgumentNullException 异常
-       _blogA = multipleService.GetService<IBlogAppService>("Blog.A");
-
-        // 使用 TryGetService 获取服务时，如果服务找不到或者未注册会返回null
-       _blogB = multipleService.TryGetService<IBlogAppService>("Blog.B");
-    }
-
-}
-```
-
-- **4. 需要使用属性注入的服务注册**
 ```csharp
 [AutofacRegister(ServiceLifeTime.Scoped, PropertiesAutowired = true)]
-public class BlogAppService : ApplicationBaseService<BlogAppService>, IBlogAppService
+public class BlogService : IBlogService
+{
+    // Autofac 会自动注入标记为 public 的属性
+    public ILogger<BlogService> Logger { get; set; }
+}
 ```
 
-- **5. 需要开启AOP拦截的服务注册**
+### 类拦截器（VirtualClass 拦截）
+
+适用于 `Self = true`（未绑定接口）的服务，通过虚方法代理实现拦截：
+
 ```csharp
-[AutofacRegister(ServiceLifeTime.Scoped, PropertiesAutowired = true, EnableInterceptor = true)]
-public class BlogAppService : ApplicationBaseService<BlogAppService>, IBlogAppService
+[AutofacRegister(ServiceLifeTime.Scoped, Self = true, EnableInterceptor = true, InterceptionType = InterceptionType.VirtualClass)]
+public class MyService
+{
+    // 方法必须为 virtual 才能被拦截
+    public virtual void DoWork() { }
+}
 ```
 
-- **6. `Castle.Core` AOP拦截器注册**
 ```csharp
+// 手动注册时指定类拦截
+builder.Register<MyService>(ServiceLifeTime.Scoped, opt =>
+{
+    opt.EnableInterceptor = true;
+    opt.InterceptionType = InterceptionType.VirtualClass;
+});
+```
+
+> **注意**：类拦截要求被拦截的方法声明为 `virtual`，泛型注册不支持类拦截。
+
+### 排除指定拦截器
+
+当模块或全局配置了拦截器，但某个服务不想应用特定拦截器时：
+
+```csharp
+// 排除 LogInterceptor，其他拦截器照常生效
+[AutofacRegister(ServiceLifeTime.Scoped, EnableInterceptor = true, ExcludeInterceptor = typeof(LogInterceptor))]
+public class CachedService : ICachedService { }
+```
+
+---
+
+## 二、Keyed 服务（Autofac 8.x）
+
+支持 Autofac 8.x 的键控服务，键可以是任意对象（字符串、枚举、整数等）：
+
+```csharp
+// 使用枚举作为键
+public enum CacheType { Memory, Redis }
+
+[AutofacRegister(ServiceLifeTime.Singleton, Key = CacheType.Memory)]
+public class MemoryCache : ICache { }
+
+[AutofacRegister(ServiceLifeTime.Singleton, Key = CacheType.Redis)]
+public class RedisCache : ICache { }
+```
+
+解析时使用 Autofac 的 `IIndex<K, V>` 或 `ResolveKeyed`：
+
+```csharp
+public class Consumer
+{
+    public Consumer(IIndex<CacheType, ICache> caches)
+    {
+        var memoryCache = caches[CacheType.Memory];
+        var redisCache = caches[CacheType.Redis];
+    }
+}
+```
+
+> **注意**：`Key` 和 `MultipleNamed` 互斥，同时设置会抛出 `InvalidOperationException`。
+
+---
+
+## 三、多实现解析
+
+同一接口多个实现时，通过 `MultipleNamed` 区分：
+
+```csharp
+[AutofacRegister(ServiceLifeTime.Scoped, MultipleNamed = "Blog.A")]
+public class BlogAService : IBlogService { }
+
+[AutofacRegister(ServiceLifeTime.Scoped, MultipleNamed = "Blog.B")]
+public class BlogBService : IBlogService { }
+```
+
+在构造函数中注入 `IAutofacMultipleService` 按名称获取：
+
+```csharp
+public class Consumer
+{
+    private readonly IBlogService _blogA;
+    private readonly IBlogService _blogB;
+
+    public Consumer(IAutofacMultipleService multipleService)
+    {
+        // 找不到时抛出 InvalidOperationException
+        _blogA = multipleService.GetService<IBlogService>("Blog.A");
+
+        // 找不到时返回 null
+        _blogB = multipleService.TryGetService<IBlogService>("Blog.B");
+    }
+}
+```
+
+> 需要先在 `UseAutofacExtensions` 中调用 `AddMultipleService()` 或 `AddTaskExecutor()` 启用该服务。
+
+---
+
+## 四、AOP 拦截器
+
+### 注册拦截器
+
+拦截器需要实现 `Castle.DynamicProxy.IInterceptor`（同步）或 `Castle.DynamicProxy.IAsyncInterceptor`（异步）：
+
+```csharp
+// 同步拦截器
 [AutofacRegister(ServiceLifeTime.Scoped, IsInterceptor = true)]
-public class UnitOfWorkInterceptor : IInterceptor
+public class LogInterceptor : IInterceptor
 {
-
+    public void Intercept(IInvocation invocation)
+    {
+        Console.WriteLine($"调用 {invocation.Method.Name} 前");
+        invocation.Proceed();
+        Console.WriteLine($"调用 {invocation.Method.Name} 后");
+    }
 }
 
+// 异步拦截器
 [AutofacRegister(ServiceLifeTime.Scoped, IsInterceptor = true)]
-public class UnitOfWorkAsyncInterceptor : IAsyncInterceptor
-{
+public class LogAsyncInterceptor : IAsyncInterceptor { }
+```
 
+### 服务级拦截
+
+```csharp
+[AutofacRegister(ServiceLifeTime.Scoped, EnableInterceptor = true, Interceptor = typeof(LogInterceptor))]
+public class BlogService : IBlogService { }
+```
+
+### 模块级拦截
+
+```csharp
+public class ApplicationModule : AutofacRegisterModule
+{
+    public override void ModuleRegister(ModuleBuilder builder)
+    {
+        builder.RegisterInterceptor<LogInterceptor>();
+        builder.InterceptedBy<LogInterceptor>(0); // 当前模块下所有启用拦截的服务生效
+
+        // 或使用便捷方法：注册 + 启用一步完成
+        builder.RegisterInterceptorAndUse<LogInterceptor>(0);
+        builder.RegisterAsyncInterceptorAndUse<LogAsyncInterceptor>(1);
+    }
 }
 ```
 
-- **7. 当前服务指定额外添加的AOP拦截服务注册**
-  
-**当你指定了需要使用的AOP拦截器，则扩展注册时候会自动开启`EnableInterceptor`属性**
-```csharp
-[AutofacRegister(ServiceLifeTime.Scoped, Interceptor = typeof(UnitOfWorkInterceptor))]
-public class BlogAppService : IBlogAppService
-{
+### 程序集拦截器自动扫描
 
+自动发现并注册程序集中所有 `IInterceptor` / `IAsyncInterceptor` 实现：
+
+```csharp
+public override void ModuleRegister(ModuleBuilder builder)
+{
+    // 自动扫描并注册所有拦截器
+    builder.RegisterAssemblyInterceptors();
+
+    // 手动指定拦截优先级
+    builder.InterceptedBy<LogInterceptor>(0);
 }
 ```
 
+### 全局拦截器
 
-### **三、模块注册**
-
-**模块注册实现有两种方式**
-
-- **1. 在需要使用到注册服务的类库创建一个类并继承扩展好的基类`LycorisRegisterModule`**
-  
 ```csharp
- public class ApplicationModule : LycorisRegisterModule
- {
-    // 注册扩展服务，如一些Nuget包中的服务需要使用 builder.Host 扩展注册
-    // 注意：需要手动重写
+builder.UseAutofacExtensions(opt =>
+{
+    opt.AddGlobalInterceptor<UnitOfWorkInterceptor>(0);
+});
+```
+
+> 拦截器排序：数值越小优先级越高。服务级 > 模块级 > 全局级，同一级别按 `Order` 排序。
+
+---
+
+## 五、模块注册
+
+### Lycoris 扩展模块
+
+继承 `AutofacRegisterModule`，重写 `ModuleRegister`：
+
+```csharp
+public class ApplicationModule : AutofacRegisterModule
+{
+    // Host 扩展注册（如 Serilog）
     public override void HostRegister(ConfigureHostBuilder host)
     {
         host.UseSerilog();
     }
 
-    // 注册扩展服务，如一些Nuget包中的服务需要使用 IServiceCollection 扩展注册
-    // 注意：需要手动重写
-    public override void SerivceRegister(IServiceCollection services)
+    // IServiceCollection 扩展注册
+    public override void ServiceRegister(IServiceCollection services)
     {
         services.AddScoped<ISerService, SerService>();
     }
 
-    // 注意：由于有些使用的小伙伴提示，使用特性自动注册后，这部分基本都用不到，但是由于 abstract 修饰，所以每次都需要重写
-    // 注意：需要手动重写
-    public override void ModuleRegister(LycorisModuleBuilder builder)
+    // 手动服务注册
+    public override void ModuleRegister(ModuleBuilder builder)
     {
-         // 如果你不习惯使用特性自动注册，也可以在此处自己注册
-         // 此处仅是使用示例，请不要照搬代码，也不要纠结我这里注册了多次
-         // 注册需要注意不要在此处注册的服务也使用特性自动注册，这样会引发注册异常
-         // 此处仅展示几种，实际上里面包含了所有的生命周期的方法
-         builder.RegisterScoped<ApplicationAppService>();
-         builder.RegisterScoped<IApplicationAppService, ApplicationAppService>();
-         builder.RegisterScoped<SalesUserAppService>(opt =>
-         {
-             // 开启Autofac属性注入
-             opt.PropertiesAutowired = true;
-             // 开启AOP拦截
-             opt.EnableInterceptor = true;
-             // 设置AOP拦截器(可以添加多个，添加多个的时候为避免拦截顺序打不到你的预期，请指定拦截器顺序，同上面一直数值越小，优先级越大，但是数值必须大于0)
-             // 如果不设置顺序，那顺序编排就会按照添加的顺序
-             // 如果添加了拦截器，会自动开启AOP拦截，即使你手动关闭也无效，所以如果当前服务不想开启AOP拦截，就不要添加拦截器
-             opt.InterceptedBy<UnitOfWorkInterceptor>(0);
-         });
+        // === 传统生命周期方法 ===
+        builder.RegisterScoped<MyService>();
+        builder.RegisterSingleton<MyJob>();
 
-         // 注册处拦截器
-         builder.RegisterInterceptor<OperationLogInterceptor>();
-         // 注册异步拦截器
-         builder.RegisterAsyncInterceptor<OperationLogAsyncInterceptor>();
+        // === 生命周期参数化便捷方法 ===
+        builder.Register<MyService>(ServiceLifeTime.Scoped);
+        builder.Register<IService, MyService>(ServiceLifeTime.Transient);
+        builder.Register<IService, MyService>(ServiceLifeTime.Scoped, "Named.A");
+        builder.Register<IService, MyService>(ServiceLifeTime.Singleton, opt =>
+        {
+            opt.PropertiesAutowired = true;
+        });
 
-         /* 
-          * 服务使用AOP拦截器注意事项:
-          * 1. Aop拦截器需要实现 Castle.Core 的 IInterceptor 接口
-          * 2. 添加AOP拦截器，如果有多个拦截器请注明拦截器拦截顺序，数值越小优先级越大，默认为0，数值必须大于等于0
-          * 3. 需要使用拦截器的服务请在特性中开启允许AOP拦截，否则即使你添加了拦截器，也无法使用
-          * 4. 如果不设置顺序，那顺序编排就会按照添加的顺序
-          * 5. 此处添加的拦截器会应用于当前类库下所有开启AOP拦截的服务
-          * 6. 为了规范使用，此处添加的拦截器并不会自己注册，需要使用者使用自动特性注册或者在此处手动注册
-          */
+        // === 条件注册 ===
+        builder.RegisterIf<IService, ProdService>(isProduction, ServiceLifeTime.Scoped);
+        builder.RegisterIf<IService, DevService>(!isProduction, ServiceLifeTime.Scoped);
 
-         // EFCore数据库事务AOP拦截器
-         // 手动注册处拦截器（使用自动特性注册的话，就不需要此处再添加了）
-         builder.RegisterInterceptor<UnitOfWorkInterceptor>();
-         // 手动注册处拦截器（使用自动特性注册的话，就不需要此处再添加了）
-         builder.RegisterAsyncInterceptor<UnitOfWorkAsyncInterceptor>();
-         // 为当前类库添加拦截器
-         builder.InterceptedBy<UnitOfWorkInterceptor>(0);
+        // 接口 → 实现（传统写法）
+        builder.RegisterScoped<IService, MyService>();
 
-         // 例子：操作日志AOP拦截器
-         // 手动注册处拦截器（使用自动特性注册的话，就不需要此处再添加了）
-         builder.RegisterInterceptor<OperationLogInterceptor>();
-         // 手动注册处拦截器（使用自动特性注册的话，就不需要此处再添加了）
-         builder.RegisterAsyncInterceptor<OperationLogAsyncInterceptor>();
-         // 为当前类库添加拦截器
-         builder.InterceptedBy<OperationLogInterceptor>(1);
-    }
- }
-```
+        // 带命名（多实现）
+        builder.RegisterScoped<IService, MyService>("Named.A");
 
-- **2. 在需要使用到注册服务的类库创建一个类并继承`Autofac`的`Module`类**
-```csharp
-public class ApplicationAutofacModule : Module
-{
-    protected override void Load(ContainerBuilder builder)
-    {
-        // do something
+        // 带配置
+        builder.RegisterScoped<IService, MyService>(opt =>
+        {
+            opt.PropertiesAutowired = true;
+            opt.EnableInterceptor = true;
+            opt.Named = "Service.A";        // 字符串命名
+            opt.Key = MyKeyEnum.Value;      // Keyed 服务键
+            opt.InterceptedBy<LogInterceptor>(0);
+        });
+
+        // 注册拦截器
+        builder.RegisterInterceptor<LogInterceptor>();
+        builder.RegisterAsyncInterceptor<LogAsyncInterceptor>();
+
+        // 注册后台服务
+        builder.RegisterHostedService<MyHostedService>();
+
+        // 程序集批量扫描
+        builder.RegisterAssemblyBy<IBaseService>(opt =>
+        {
+            opt.ServiceLifeTime = ServiceLifeTime.Scoped;
+            opt.EnableInterceptor = true;
+        });
     }
 }
 ```
 
-**在第一步替换系统DI容器的扩展中引入模块注册服务**
+### 程序集扫描
+
+`RegisterAssemblyBy` 支持多次调用，配置不同的扫描规则：
 
 ```csharp
-var builder = WebApplication.CreateBuilder(args);
-
-// 替换系统自带的DI容器为Autofac
-// 注意 6.0.6 版本之后 这个位置没有Host了，因为需要支持自带的IServiceCollection的扩展服务注册
-builder.UseAutofacExtensions(builder =>
+public override void ModuleRegister(ModuleBuilder builder)
 {
-    // 如果有多个类库的服务，每个类库都需要新建一个类来扩展封装好的 AutofacRegisterModule 并在此处依次添加即可
-    // 添加方式1：
-    builder.AddLycorisRegisterModule<ApplicationModule>();
-    builder.AddLycorisRegisterModule<ModelModule>();
+    // 扫描所有实现 IScopedService 的类 → 注册为 Scoped
+    builder.RegisterAssemblyBy<IScopedService>(opt =>
+    {
+        opt.ServiceLifeTime = ServiceLifeTime.Scoped;
+    });
 
-    // 添加方式2：
-    builder.AddLycorisRegisterModule<ApplicationModule>()
-           .AddLycorisRegisterModule<ModelModule>();
-
-    // Autofac原生的模块注册
-    // 注意使用原生的模块注册，扩展内除 IAutofacMultipleService 服务,其他功能均不支持
-    // 原生注册的功能，仅仅是给部分想试水扩展的朋友一个兼容性而已，不需要全部的注册都改造，只需要改造其中一个的部分，其他依旧参照原生的进行测试来决定需不需要使用
-    builder.AddAutofacModule<ApplicationAutofacModule>();
-
-    // 如果大部分类库都用到某些固定的拦截器，这里可以使用注入全局拦截器。
-    // 需要使用拦截器的服务请在特性中开启允许AOP拦截
-    // 注意全局拦截器仅对继承 LycorisRegisterModule 的模块有效
-    builder.AddGlobalInterceptor<UnitOfWorkInterceptor>(0);
-});
-
-// Add services to the container.
-
-builder.Services.AddControllers();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
+    // 扫描所有继承 BaseJob 的类 → 注册为 Singleton
+    builder.RegisterAssemblyBy<BaseJob>(opt =>
+    {
+        opt.ServiceLifeTime = ServiceLifeTime.Singleton;
+        opt.Self = true;
+    });
+}
 ```
+
+### 命名约定扫描
+
+按自定义条件筛选类型进行批量注册，不依赖基类或接口：
+
+```csharp
+public override void ModuleRegister(ModuleBuilder builder)
+{
+    // 注册所有名称以 "Service" 结尾的类
+    builder.RegisterAssemblyByConvention(
+        t => t.Name.EndsWith("Service"),
+        opt =>
+        {
+            opt.ServiceLifeTime = ServiceLifeTime.Scoped;
+        });
+
+    // 注册所有在 "Services" 命名空间下的类
+    builder.RegisterAssemblyByConvention(
+        t => t.Namespace?.Contains("Services") == true,
+        opt =>
+        {
+            opt.ServiceLifeTime = ServiceLifeTime.Transient;
+        });
+}
+```
+
+### 跨程序集扫描
+
+从其他程序集扫描 `[AutofacRegister]` 标注的服务：
+
+```csharp
+public override void ModuleRegister(ModuleBuilder builder)
+{
+    // 扫描外部程序集中标记了 [AutofacRegister] 的服务
+    builder.RegisterAllFromAssembly(typeof(ExternalService).Assembly);
+}
+```
+
+> 标注了 `[AutofacRegister]` 特性的类会被程序集扫描自动排除，避免重复注册。
+
+### Autofac 原生 Module
+
+```csharp
+public class MyAutofacModule : Module
+{
+    protected override void Load(ContainerBuilder builder)
+    {
+        builder.RegisterType<MyService>().As<IMyService>().InstancePerLifetimeScope();
+    }
+}
+
+// 在 UseAutofacExtensions 中添加
+builder.UseAutofacExtensions(opt =>
+{
+    opt.AddAutofacModule<MyAutofacModule>();
+});
+```
+
+---
+
+## 六、异步任务执行器
+
+```csharp
+public class Consumer
+{
+    public Consumer(IAsyncTaskExecutor executor)
+    {
+        // 立即执行
+        executor.Execute<MyTaskHandler>();
+
+        // 延迟 5 秒执行
+        executor.DelayExecute<MyTaskHandler>(5);
+
+        // 带参数执行
+        executor.Execute<MyTaskHandler>(new { Id = 1 });
+        executor.DelayExecute<MyTaskHandler>(new { Id = 1 }, 10);
+    }
+}
+```
+
+任务处理器：
+
+```csharp
+[AutofacRegister(ServiceLifeTime.Scoped, MultipleNamed = "MyTask")]
+public class MyTaskHandler : AsyncTaskExecutorHandler
+{
+    public override async Task ExecuteAsync()
+    {
+        await Task.Delay(1000);
+        Console.WriteLine("任务完成");
+    }
+
+    public override async Task ExecuteAsync(object? args)
+    {
+        Console.WriteLine($"任务完成，参数: {args}");
+        await Task.CompletedTask;
+    }
+}
+```
+
+### 自定义解析策略
+
+子类重写 `ResolveHandler` 实现自定义处理器解析：
+
+```csharp
+public class KeyedTaskExecutor : AsyncTaskExecutor
+{
+    public KeyedTaskExecutor(IServiceScopeFactory scopeFactory) : base(scopeFactory) { }
+
+    protected override IAsyncTaskExecutorHandler ResolveHandler(
+        IAutofacMultipleService multipleService, Type handlerType)
+    {
+        // 使用 Key 而非 Named 解析
+        var key = handlerType.GetCustomAttribute<AutofacRegisterAttribute>(false)?.Key;
+        // ... 自定义解析逻辑
+    }
+}
+```
+
+---
+
+## 七、非 Web 应用（IHostBuilder）
+
+```csharp
+Host.CreateDefaultBuilder(args)
+    .UseAutofacExtensions(opt =>
+    {
+        opt.AddRegisterModule<ApplicationModule>();
+    })
+    .ConfigureServices(services =>
+    {
+        services.AddHostedService<Worker>();
+    });
+```
+
+---
+
+## API 总览
+
+### AutofacBuilder
+
+| 方法 | 说明 |
+|------|------|
+| `AddRegisterModule<T>()` | 添加 Lycoris 扩展模块 |
+| `AddAutofacModule<T>()` | 添加 Autofac 原生模块 |
+| `AddGlobalInterceptor<T>(order?)` | 添加全局拦截器 |
+| `AddMultipleService()` | 启用多实现解析服务 |
+| `AddTaskExecutor()` | 启用异步任务执行器（同时启用多实现服务） |
+
+### ModuleBuilder
+
+| 方法 | 说明 |
+|------|------|
+| `RegisterTransient<T>()` | 注册瞬态服务 |
+| `RegisterScoped<T>()` | 注册作用域服务 |
+| `RegisterSingleton<T>()` | 注册单例服务 |
+| `Register<T>(lifeTime)` | 生命周期参数化注册（10 个重载） |
+| `RegisterIf<T>(condition, lifeTime)` | 条件注册（5 个重载） |
+| `RegisterInterceptor<T>()` | 注册同步拦截器 |
+| `RegisterAsyncInterceptor<T>()` | 注册异步拦截器 |
+| `RegisterInterceptorAndUse<T>(order?)` | 注册同步拦截器并启用（一步完成） |
+| `RegisterAsyncInterceptorAndUse<T>(order?)` | 注册异步拦截器并启用（一步完成） |
+| `RegisterAssemblyInterceptors()` | 自动扫描程序集中所有拦截器并注册 |
+| `RegisterHostedService<T>()` | 注册后台服务 |
+| `InterceptedBy<T>(order?)` | 添加模块级拦截器 |
+| `RegisterAssemblyBy<T>(configure)` | 程序集批量扫描（可多次调用） |
+| `RegisterAssemblyByConvention(predicate, configure)` | 按命名约定/条件批量扫描 |
+| `RegisterAllFromAssembly(assembly)` | 从指定程序集扫描 `[AutofacRegister]` 服务 |
+
+### IAutofacMultipleService
+
+| 方法 | 说明 |
+|------|------|
+| `GetService<T>(name)` | 按名称获取服务，未找到抛出异常 |
+| `TryGetService<T>(name)` | 按名称获取服务，未找到返回 null |
+
+### IAsyncTaskExecutor
+
+| 方法 | 说明 |
+|------|------|
+| `Execute<T>()` | 立即执行任务 |
+| `Execute<T>(args)` | 立即执行带参数任务 |
+| `DelayExecute<T>(seconds)` | 延迟执行任务 |
+| `DelayExecute<T>(args, seconds)` | 延迟执行带参数任务 |
+
+---
+
+## 许可证
+
+[MIT](LICENSE)
+
+Copyright (c) 2023 Lycoris

@@ -1,4 +1,5 @@
-﻿using Castle.DynamicProxy.Internal;
+﻿using Castle.DynamicProxy;
+using Castle.DynamicProxy.Internal;
 using Lycoris.Autofac.Extensions.Extensions;
 using Lycoris.Autofac.Extensions.Impl;
 using Lycoris.Autofac.Extensions.Options;
@@ -23,7 +24,7 @@ namespace Lycoris.Autofac.Extensions
         /// IServiceCollection 扩展服务注册
         /// </summary>
         /// <param name="services"></param>
-        public virtual void SerivceRegister(IServiceCollection services) { }
+        public virtual void ServiceRegister(IServiceCollection services) { }
 
         /// <summary>
         /// Lycoris扩展模块注册
@@ -45,7 +46,27 @@ namespace Lycoris.Autofac.Extensions
 
             var assembly = GetType().Assembly;
 
-            // 
+            // 自动扫描拦截器
+            if (Builder.AutoRegisterInterceptors)
+            {
+                var interceptorTypes = assembly.GetTypes()
+                    .Where(t => t.IsClass && !t.IsAbstract)
+                    .Where(t => typeof(IInterceptor).IsAssignableFrom(t) || typeof(IAsyncInterceptor).IsAssignableFrom(t));
+
+                foreach (var type in interceptorTypes)
+                {
+                    Builder.RegisterContainer.Add(new LycorisRegisterService()
+                    {
+                        Type = type,
+                        Option = new AutofacRegisterAttribute(ServiceLifeTime.Scoped)
+                        {
+                            Self = true
+                        }
+                    });
+                }
+            }
+
+            // 程序集扫描
             RegisterAssembly(assembly, Builder);
 
             // 判断模块是否有AOP拦截器相关的配置
@@ -58,12 +79,19 @@ namespace Lycoris.Autofac.Extensions
                     {
                         item.Interceptors ??= new List<InterceptorOption>();
                         item.Interceptors.AddRange(Builder.InterceptorOptions);
-                        item.Interceptors = item.Interceptors.OrderBy(x => x.Order).DistinctBy(x => x.Type).ToList();
+                        item.Interceptors = RegistrationExtensions.NormalizeInterceptors(item.Interceptors, item.Option.ExcludeInterceptor);
                     }
                 }
             }
 
             var services = assembly.GetLycorisRegisterServiceList(Builder.InterceptorOptions);
+
+            // 扫描额外程序集
+            foreach (var additionalAssembly in Builder.AdditionalAssemblies)
+            {
+                var additionalServices = additionalAssembly.GetLycorisRegisterServiceList(Builder.InterceptorOptions);
+                services.AddRange(additionalServices);
+            }
 
             services.AddRange(Builder.RegisterContainer);
 
@@ -86,32 +114,32 @@ namespace Lycoris.Autofac.Extensions
         /// <param name="builder"></param>
         private static void RegisterAssembly(Assembly assembly, ModuleBuilder builder)
         {
-            if (builder.AssemblyConfigure != null)
+            // 基类/接口过滤扫描
+            foreach (var entry in builder.AssemblyFilterEntries)
             {
-                //
                 var query = assembly.GetTypes()
                                     .Where(x => x.GetCustomAttributes(typeof(AutofacRegisterAttribute), false).Length == 0)
                                     .Where(x => x.IsClass && !x.IsAbstract);
 
-                if (builder.AssemblyFilterType!.IsInterface)
+                if (entry.FilterType.IsInterface)
                 {
-                    query = query.Where(x => IsInterfaceFrom(x, builder.AssemblyFilterType));
+                    query = query.Where(x => IsInterfaceFrom(x, entry.FilterType));
                 }
                 else
                 {
-                    query = query.Where(x => x.IsSubclassOf(builder.AssemblyFilterType));
+                    query = query.Where(x => x.IsSubclassOf(entry.FilterType));
                 }
 
-                var types = query.Select(x => x).ToList();
+                var types = query.ToList();
 
                 if (types == null || !types.Any())
-                    return;
+                    continue;
 
                 var option = new RegisterAssemblyBuilder();
 
-                builder.AssemblyConfigure(option);
+                entry.Configure(option);
 
-                if (!builder.AssemblyFilterType!.IsInterface)
+                if (!entry.FilterType.IsInterface)
                     option.Self = true;
 
                 var _builder = option.BuildAutofacSingleBuilder();
@@ -124,17 +152,12 @@ namespace Lycoris.Autofac.Extensions
                     {
                         var itypes = type!.GetAllInterfaces();
 
-                        // 如果继承接口不为空
                         if (itypes != null && itypes.Any())
                         {
-                            // 继承接口大于1个
                             if (itypes.Length > 1)
                             {
-                                // 优先获取名字包含当前实现类的服务
-                                // 例：实现类 AService 接口 IAService
                                 itype = itypes.Where(x => x.Name.EndsWith(type.Name)).FirstOrDefault();
 
-                                // 如果上述还获取不到，则获取最后一个继承的接口作为注册接口
                                 if (itype == null)
                                     itype = itypes.LastOrDefault();
                             }
@@ -142,7 +165,6 @@ namespace Lycoris.Autofac.Extensions
                                 itype = itypes[0];
                         }
 
-                        // 如果是泛型，则取泛型类定义属性作为注册的类型
                         if (itype != null && itype.IsGenericType)
                             itype = itype.GetGenericTypeDefinition();
                     }
@@ -177,7 +199,82 @@ namespace Lycoris.Autofac.Extensions
                             break;
                     }
                 }
+            }
 
+            // 条件断言过滤扫描
+            foreach (var entry in builder.PredicateFilterEntries)
+            {
+                var query = assembly.GetTypes()
+                                    .Where(x => x.GetCustomAttributes(typeof(AutofacRegisterAttribute), false).Length == 0)
+                                    .Where(x => x.IsClass && !x.IsAbstract)
+                                    .Where(entry.Predicate);
+
+                var types = query.ToList();
+
+                if (types == null || !types.Any())
+                    continue;
+
+                var option = new RegisterAssemblyBuilder();
+
+                entry.Configure(option);
+
+                var _builder = option.BuildAutofacSingleBuilder();
+
+                foreach (var type in types)
+                {
+                    Type? itype = null;
+
+                    if (!option.Self)
+                    {
+                        var itypes = type!.GetAllInterfaces();
+
+                        if (itypes != null && itypes.Any())
+                        {
+                            if (itypes.Length > 1)
+                            {
+                                itype = itypes.Where(x => x.Name.EndsWith(type.Name)).FirstOrDefault();
+
+                                if (itype == null)
+                                    itype = itypes.LastOrDefault();
+                            }
+                            else
+                                itype = itypes[0];
+                        }
+
+                        if (itype != null && itype.IsGenericType)
+                            itype = itype.GetGenericTypeDefinition();
+                    }
+
+                    switch (option.ServiceLifeTime)
+                    {
+                        case ServiceLifeTime.Transient:
+                            {
+                                if (option.Self || itype == null)
+                                    builder.RegisterTransient(type);
+                                else
+                                    builder.RegisterTransient(itype, type, _builder);
+                            }
+                            break;
+                        case ServiceLifeTime.Scoped:
+                            {
+                                if (option.Self || itype == null)
+                                    builder.RegisterScoped(type);
+                                else
+                                    builder.RegisterScoped(itype, type, _builder);
+                            }
+                            break;
+                        case ServiceLifeTime.Singleton:
+                            {
+                                if (option.Self || itype == null)
+                                    builder.RegisterSingleton(type);
+                                else
+                                    builder.RegisterSingleton(itype, type, _builder);
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
         }
 

@@ -37,13 +37,10 @@ namespace Lycoris.Autofac.Extensions.Extensions
 
             var modelName = module.GetType().FullName ?? throw new ArgumentException($"autofac register module fail:{nameof(module)}");
 
-            if (s_KeyValues.ContainsKey(modelName))
-                return builder.RegisterModule<NullModule>();
+            if (!s_KeyValues.TryAdd(modelName, 1))
+                return builder.RegisterModule(NullModule.Instance);
 
-            if (s_KeyValues.TryAdd(modelName, 1))
-                return builder.RegisterModule(module);
-
-            throw new ArgumentException($"autofac register module fail:{modelName}");
+            return builder.RegisterModule(module);
         }
 
         /// <summary>
@@ -81,9 +78,6 @@ namespace Lycoris.Autofac.Extensions.Extensions
             {
                 if (item.Option == null || item.Type == null)
                     continue;
-
-                if (item.AsType != null && !item.AsType.IsInterface)
-                    throw new ArgumentException("must be an interface", item.AsType.Name);
 
                 // 获取当前实现类所有继承接口
                 var itypes = item.Type.GetAllInterfaces();
@@ -142,32 +136,25 @@ namespace Lycoris.Autofac.Extensions.Extensions
         /// <param name="interceptorOption"></param>
         internal static void AutoFacRegister([NotNull] this ContainerBuilder builder, List<LycorisRegisterService> services, List<InterceptorOption>? interceptorOption = null)
         {
-            try
+            if (services != null && services.Any())
             {
-                if (services != null && services.Any())
+                foreach (var item in services)
                 {
-                    foreach (var item in services)
-                    {
-                        if (item.Option == null || item.Type == null)
-                            continue;
+                    if (item.Option == null || item.Type == null)
+                        continue;
 
-                        var temp = interceptorOption ?? new List<InterceptorOption>();
-                        temp.AddRange(item.Interceptors ?? new List<InterceptorOption>());
-                        // 处理AOP拦截，过滤重复的，过滤器拦截顺序排序
-                        var interceptors = GetAllInterceptor(item.Option, temp);
+                    var temp = interceptorOption ?? new List<InterceptorOption>();
+                    temp.AddRange(item.Interceptors ?? new List<InterceptorOption>());
+                    // 处理AOP拦截，过滤重复的，过滤器拦截顺序排序
+                    var interceptors = GetAllInterceptor(item.Option, temp);
 
-                        if (item.Option.ServiceLifeTime == ServiceLifeTime.Transient)
-                            builder.TransientServiceRegister(item.Type, item.AsType, item.Option, interceptors);
-                        else if (item.Option.ServiceLifeTime == ServiceLifeTime.Scoped)
-                            builder.ScopedServiceRegister(item.Type, item.AsType, item.Option, interceptors);
-                        else
-                            builder.SingletonServiceRegister(item.Type, item.AsType, item.Option, interceptors);
-                    }
+                    if (item.Option.ServiceLifeTime == ServiceLifeTime.Transient)
+                        builder.TransientServiceRegister(item.Type, item.AsType, item.Option, interceptors);
+                    else if (item.Option.ServiceLifeTime == ServiceLifeTime.Scoped)
+                        builder.ScopedServiceRegister(item.Type, item.AsType, item.Option, interceptors);
+                    else
+                        builder.SingletonServiceRegister(item.Type, item.AsType, item.Option, interceptors);
                 }
-            }
-            catch
-            {
-                throw;
             }
         }
 
@@ -280,7 +267,17 @@ namespace Lycoris.Autofac.Extensions.Extensions
             // 2. 特性没有指定自身注入
             // 3. 不是AOP拦截类型
             if (@interface != null && !option.Self && !option.IsInterceptor)
-                build = string.IsNullOrEmpty(option.MultipleNamed) ? build.As(@interface) : build.Named(option.MultipleNamed, @interface);
+            {
+                if (option.Key != null && !string.IsNullOrEmpty(option.MultipleNamed))
+                    throw new InvalidOperationException($"Cannot specify both Key and MultipleNamed for type '{type.FullName}'. These options are mutually exclusive.");
+
+                if (option.Key != null)
+                    build = build.Keyed(option.Key, @interface);
+                else if (!string.IsNullOrEmpty(option.MultipleNamed))
+                    build = build.Named(option.MultipleNamed, @interface);
+                else
+                    build = build.As(@interface);
+            }
             else
                 build = build.AsSelf();
 
@@ -290,13 +287,18 @@ namespace Lycoris.Autofac.Extensions.Extensions
 
             // 允许Aop拦截,且当前要注入的非Aop拦截服务
             if (option.EnableInterceptor && !option.IsInterceptor && interceptors != null && interceptors.Any())
-                build = build.EnableInterfaceInterceptors().InterceptedBy(interceptors!);
+            {
+                if (option.InterceptionType == InterceptionType.VirtualClass)
+                    build = build.EnableClassInterceptors().InterceptedBy(interceptors!);
+                else
+                    build = build.EnableInterfaceInterceptors().InterceptedBy(interceptors!);
+            }
 
             return build;
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="builder"></param>
         /// <param name="type"></param>
@@ -314,7 +316,17 @@ namespace Lycoris.Autofac.Extensions.Extensions
             // 2. 特性没有指定自身注入
             // 3. 不是AOP拦截类型
             if (@interface != null && !option.Self && !option.IsInterceptor)
-                build = string.IsNullOrEmpty(option.MultipleNamed) ? build.As(@interface) : build.Named(option.MultipleNamed, @interface);
+            {
+                if (option.Key != null && !string.IsNullOrEmpty(option.MultipleNamed))
+                    throw new InvalidOperationException($"Cannot specify both Key and MultipleNamed for type '{type.FullName}'. These options are mutually exclusive.");
+
+                if (option.Key != null)
+                    build = build.Keyed(option.Key, @interface);
+                else if (!string.IsNullOrEmpty(option.MultipleNamed))
+                    build = build.Named(option.MultipleNamed, @interface);
+                else
+                    build = build.As(@interface);
+            }
             else
                 build = build.AsSelf();
 
@@ -323,6 +335,7 @@ namespace Lycoris.Autofac.Extensions.Extensions
                 build = build.PropertiesAutowired();
 
             // 允许Aop拦截,且当前要注入的非Aop拦截服务
+            // 注：泛型注册（RegisterGeneric）返回 ReflectionActivatorData，不支持 EnableClassInterceptors
             if (option.EnableInterceptor && !option.IsInterceptor && interceptors != null && interceptors.Any())
                 build = build.EnableInterfaceInterceptors().InterceptedBy(interceptors!);
 
@@ -330,11 +343,24 @@ namespace Lycoris.Autofac.Extensions.Extensions
         }
 
         /// <summary>
-        /// 
+        /// 拦截器列表去重、排序、排除
         /// </summary>
-        /// <param name="option"></param>
-        /// <param name="interceptors"></param>
+        /// <param name="interceptors">拦截器列表</param>
+        /// <param name="excludeInterceptor">需要排除的拦截器类型</param>
         /// <returns></returns>
+        internal static List<InterceptorOption> NormalizeInterceptors(List<InterceptorOption>? interceptors, Type? excludeInterceptor = null)
+        {
+            if (interceptors == null || interceptors.Count == 0)
+                return new List<InterceptorOption>();
+
+            var result = interceptors.DistinctBy(x => x.Type).OrderBy(x => x.Order).ToList();
+
+            if (excludeInterceptor != null)
+                result = result.Where(x => x.Type != excludeInterceptor).ToList();
+
+            return result;
+        }
+
         static Type[]? GetAllInterceptor(AutofacRegisterAttribute option, List<InterceptorOption>? interceptors)
         {
             interceptors = interceptors?.DistinctBy(x => x.Type).ToList() ?? new List<InterceptorOption>();
@@ -344,11 +370,7 @@ namespace Lycoris.Autofac.Extensions.Extensions
                 var _tmp = interceptors.FirstOrDefault(x => x.Type == option.Interceptor);
                 if (_tmp == null)
                 {
-                    interceptors.Add(new InterceptorOption()
-                    {
-                        Type = option.Interceptor,
-                        Order = option.InterceptorOrder ?? -1
-                    });
+                    interceptors.Add(new InterceptorOption(option.Interceptor, option.InterceptorOrder ?? -1));
                 }
                 else if (option.InterceptorOrder.HasValue)
                     _tmp.Order = option.InterceptorOrder.Value;
@@ -376,7 +398,7 @@ namespace Lycoris.Autofac.Extensions.Extensions
                 Type[]? interceptors = null;
                 if (item.Interceptors != null && item.Interceptors.Any())
                 {
-                    item.Interceptors = item.Interceptors.DistinctBy(x => x.Type).OrderBy(x => x.Order).ToList();
+                    item.Interceptors = NormalizeInterceptors(item.Interceptors, item.Option.ExcludeInterceptor);
                     interceptors = item.Interceptors.Select(x => x.Type).ToArray();
                 }
 

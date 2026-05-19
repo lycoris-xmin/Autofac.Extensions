@@ -40,8 +40,7 @@ namespace Lycoris.Autofac.Extensions
                               builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().InstancePerLifetimeScope();
                               builder.RegisterType<AsyncTaskExecutor>().As<IAsyncTaskExecutor>().InstancePerLifetimeScope();
                           }
-
-                          if (autofacBuilder.EnabledLycorisMultipleService)
+                          else if (autofacBuilder.EnabledLycorisMultipleService)
                               builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().InstancePerLifetimeScope();
 
                           // 获取所有待注册的服务信息
@@ -80,8 +79,7 @@ namespace Lycoris.Autofac.Extensions
                                builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().InstancePerLifetimeScope();
                                builder.RegisterType<AsyncTaskExecutor>().As<IAsyncTaskExecutor>().InstancePerLifetimeScope();
                            }
-
-                           if (autofacBuilder.EnabledLycorisMultipleService)
+                           else if (autofacBuilder.EnabledLycorisMultipleService)
                                builder.RegisterType<AutofacMultipleService>().As<IAutofacMultipleService>().InstancePerLifetimeScope();
 
                            // 获取所有待注册的服务信息

@@ -62,6 +62,12 @@ namespace Lycoris.Autofac.Extensions
             get => _Interceptor;
             set
             {
+                if (value == null)
+                {
+                    _Interceptor = null;
+                    return;
+                }
+
                 if (!value.GetAllInterfaces().Any(x => x == typeof(IInterceptor)))
                     throw new ArgumentException("the specified AOP interceptor is not assignable from 'IInterceptor' and cannot be used", nameof(_Interceptor));
 
@@ -76,6 +82,16 @@ namespace Lycoris.Autofac.Extensions
         public int? InterceptorOrder { get; set; } = null;
 
         /// <summary>
+        /// AOP 拦截类型，接口拦截(默认)或类拦截
+        /// </summary>
+        public InterceptionType InterceptionType { get; set; } = InterceptionType.Interface;
+
+        /// <summary>
+        /// 排除指定的拦截器类型，该拦截器不会应用到当前服务
+        /// </summary>
+        public Type? ExcludeInterceptor { get; set; } = null;
+
+        /// <summary>
         /// 是否是AOP拦截器(默认：false)
         /// </summary>
         public bool IsInterceptor { get; set; } = false;
@@ -86,7 +102,13 @@ namespace Lycoris.Autofac.Extensions
         public string? MultipleNamed { get; set; } = null;
 
         /// <summary>
-        /// 
+        /// 接口多实例实现键 (Autofac 8.x Keyed 服务, 任意对象类型)
+        /// 与 MultipleNamed 互斥，只能设置其中一个
+        /// </summary>
+        public object? Key { get; set; } = null;
+
+        /// <summary>
+        ///
         /// </summary>
         /// <param name="ServiceLifeTime"></param>
         public AutofacRegisterAttribute(ServiceLifeTime ServiceLifeTime)

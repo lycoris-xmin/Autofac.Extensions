@@ -7,7 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BC70EE21-82D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{997E2E6A-F0AA-422E-A707-CC16A1A51812}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lycoris.Autofac.Extensions", "src\Lycoris.Autofac.Extensions\Lycoris.Autofac.Extensions.csproj", "{8E7E4A84-DDAC-4E4B-A055-8FCF1110AF6C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lycoris.Autofac.Extensions", "src\Lycoris.Autofac.Extensions.csproj", "{8E7E4A84-DDAC-4E4B-A055-8FCF1110AF6C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutofacModule", "samples\Lycoris.Autofac.Extensions\AutofacModule\AutofacModule.csproj", "{BFFBF884-F7C7-49AD-953D-1CF6F4326EDE}"
 EndProject

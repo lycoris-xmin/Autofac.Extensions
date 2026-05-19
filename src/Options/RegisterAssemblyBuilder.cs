@@ -26,6 +26,16 @@
         public bool EnableInterceptor { get; set; } = false;
 
         /// <summary>
+        /// AOP 拦截类型，接口拦截(默认)或类拦截
+        /// </summary>
+        public InterceptionType InterceptionType { get; set; } = InterceptionType.Interface;
+
+        /// <summary>
+        /// 排除指定的拦截器类型
+        /// </summary>
+        public Type? ExcludeInterceptor { get; set; } = null;
+
+        /// <summary>
         /// 拦截器列表
         /// </summary>
         internal List<InterceptorOption> Interceptors = new();
@@ -40,6 +50,8 @@
             {
                 x.PropertiesAutowired = this.PropertiesAutowired;
                 x.EnableInterceptor = this.EnableInterceptor;
+                x.InterceptionType = this.InterceptionType;
+                x.ExcludeInterceptor = this.ExcludeInterceptor;
                 x.Interceptors = this.Interceptors;
             };
         }

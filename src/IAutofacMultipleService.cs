@@ -11,7 +11,7 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="name">多实现服务别名</param>
         /// <returns></returns>
-        T GetService<T>(string name) where T : notnull;
+        T GetService<T>(string name) where T : class;
 
         /// <summary>
         /// 尝试获取服务
@@ -19,6 +19,6 @@
         /// <typeparam name="T"></typeparam>
         /// <param name="name">多实现服务别名</param>
         /// <returns></returns>
-        T? TryGetService<T>(string name) where T : notnull;
+        T? TryGetService<T>(string name) where T : class;
     }
 }

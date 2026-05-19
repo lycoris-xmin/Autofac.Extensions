@@ -3,6 +3,7 @@ using Castle.DynamicProxy.Internal;
 using Lycoris.Autofac.Extensions.Options;
 using Microsoft.Extensions.Hosting;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 namespace Lycoris.Autofac.Extensions.Impl
 {
@@ -13,6 +14,7 @@ namespace Lycoris.Autofac.Extensions.Impl
     {
         internal readonly List<LycorisRegisterService> RegisterContainer = new();
         internal readonly List<InterceptorOption> InterceptorOptions = new();
+        internal bool AutoRegisterInterceptors { get; private set; } = false;
 
         /// <summary>
         /// 为当前类库添加过滤器 
@@ -29,7 +31,7 @@ namespace Lycoris.Autofac.Extensions.Impl
 
             order ??= InterceptorOptions.Count;
 
-            InterceptorOptions.Add(new InterceptorOption() { Type = typeof(TInterceptor), Order = order.Value });
+            InterceptorOptions.Add(new InterceptorOption(typeof(TInterceptor), order.Value));
 
             return this;
         }
@@ -382,6 +384,164 @@ namespace Lycoris.Autofac.Extensions.Impl
             => RegisterAsType(@interface, service, ServiceLifeTime.Singleton, configure);
 
 
+        #region ==== 生命周期参数化便捷重载 ====
+
+        /// <summary>
+        /// 按生命周期注册服务（仅自身）
+        /// </summary>
+        public ModuleBuilder Register<T>(ServiceLifeTime lifeTime) where T : class
+            => lifeTime switch
+            {
+                ServiceLifeTime.Transient => RegisterTransient<T>(),
+                ServiceLifeTime.Scoped => RegisterScoped<T>(),
+                ServiceLifeTime.Singleton => RegisterSingleton<T>(),
+                _ => this
+            };
+
+        /// <summary>
+        /// 按生命周期注册服务（仅自身，带配置）
+        /// </summary>
+        public ModuleBuilder Register<T>(ServiceLifeTime lifeTime, Action<AutofacSingleBuilder> configure) where T : class
+            => lifeTime switch
+            {
+                ServiceLifeTime.Transient => RegisterTransient<T>(configure),
+                ServiceLifeTime.Scoped => RegisterScoped<T>(configure),
+                ServiceLifeTime.Singleton => RegisterSingleton<T>(configure),
+                _ => this
+            };
+
+        /// <summary>
+        /// 按生命周期注册服务（接口 → 实现）
+        /// </summary>
+        public ModuleBuilder Register<T, TImpl>(ServiceLifeTime lifeTime) where TImpl : T where T : class
+            => lifeTime switch
+            {
+                ServiceLifeTime.Transient => RegisterTransient<T, TImpl>(),
+                ServiceLifeTime.Scoped => RegisterScoped<T, TImpl>(),
+                ServiceLifeTime.Singleton => RegisterSingleton<T, TImpl>(),
+                _ => this
+            };
+
+        /// <summary>
+        /// 按生命周期注册服务（接口 → 实现，具名）
+        /// </summary>
+        public ModuleBuilder Register<T, TImpl>(ServiceLifeTime lifeTime, string named) where TImpl : T where T : class
+            => lifeTime switch
+            {
+                ServiceLifeTime.Transient => RegisterTransient<T, TImpl>(named),
+                ServiceLifeTime.Scoped => RegisterScoped<T, TImpl>(named),
+                ServiceLifeTime.Singleton => RegisterSingleton<T, TImpl>(named),
+                _ => this
+            };
+
+        /// <summary>
+        /// 按生命周期注册服务（接口 → 实现，带配置）
+        /// </summary>
+        public ModuleBuilder Register<T, TImpl>(ServiceLifeTime lifeTime, Action<AutofacSingleBuilder> configure) where TImpl : T where T : class
+            => lifeTime switch
+            {
+                ServiceLifeTime.Transient => RegisterTransient<T, TImpl>(configure),
+                ServiceLifeTime.Scoped => RegisterScoped<T, TImpl>(configure),
+                ServiceLifeTime.Singleton => RegisterSingleton<T, TImpl>(configure),
+                _ => this
+            };
+
+        /// <summary>
+        /// 按生命周期注册服务（Type）
+        /// </summary>
+        public ModuleBuilder Register(Type type, ServiceLifeTime lifeTime)
+            => lifeTime switch
+            {
+                ServiceLifeTime.Transient => RegisterTransient(type),
+                ServiceLifeTime.Scoped => RegisterScoped(type),
+                ServiceLifeTime.Singleton => RegisterSingleton(type),
+                _ => this
+            };
+
+        /// <summary>
+        /// 按生命周期注册服务（Type，带配置）
+        /// </summary>
+        public ModuleBuilder Register(Type type, ServiceLifeTime lifeTime, Action<AutofacSingleBuilder> configure)
+            => lifeTime switch
+            {
+                ServiceLifeTime.Transient => RegisterTransient(type, configure),
+                ServiceLifeTime.Scoped => RegisterScoped(type, configure),
+                ServiceLifeTime.Singleton => RegisterSingleton(type, configure),
+                _ => this
+            };
+
+        /// <summary>
+        /// 按生命周期注册服务（接口Type → 实现Type）
+        /// </summary>
+        public ModuleBuilder Register(Type @interface, Type service, ServiceLifeTime lifeTime)
+            => lifeTime switch
+            {
+                ServiceLifeTime.Transient => RegisterTransient(@interface, service),
+                ServiceLifeTime.Scoped => RegisterScoped(@interface, service),
+                ServiceLifeTime.Singleton => RegisterSingleton(@interface, service),
+                _ => this
+            };
+
+        /// <summary>
+        /// 按生命周期注册服务（接口Type → 实现Type，具名）
+        /// </summary>
+        public ModuleBuilder Register(Type @interface, Type service, ServiceLifeTime lifeTime, string named)
+            => lifeTime switch
+            {
+                ServiceLifeTime.Transient => RegisterTransient(@interface, service, named),
+                ServiceLifeTime.Scoped => RegisterScoped(@interface, service, named),
+                ServiceLifeTime.Singleton => RegisterSingleton(@interface, service, named),
+                _ => this
+            };
+
+        /// <summary>
+        /// 按生命周期注册服务（接口Type → 实现Type，带配置）
+        /// </summary>
+        public ModuleBuilder Register(Type @interface, Type service, ServiceLifeTime lifeTime, Action<AutofacSingleBuilder> configure)
+            => lifeTime switch
+            {
+                ServiceLifeTime.Transient => RegisterTransient(@interface, service, configure),
+                ServiceLifeTime.Scoped => RegisterScoped(@interface, service, configure),
+                ServiceLifeTime.Singleton => RegisterSingleton(@interface, service, configure),
+                _ => this
+            };
+
+        #endregion
+
+        #region ==== 条件注册 ====
+
+        /// <summary>
+        /// 条件注册（仅自身）
+        /// </summary>
+        public ModuleBuilder RegisterIf<T>(bool condition, ServiceLifeTime lifeTime) where T : class
+            => condition ? Register<T>(lifeTime) : this;
+
+        /// <summary>
+        /// 条件注册（仅自身，带配置）
+        /// </summary>
+        public ModuleBuilder RegisterIf<T>(bool condition, ServiceLifeTime lifeTime, Action<AutofacSingleBuilder> configure) where T : class
+            => condition ? Register<T>(lifeTime, configure) : this;
+
+        /// <summary>
+        /// 条件注册（接口 → 实现）
+        /// </summary>
+        public ModuleBuilder RegisterIf<T, TImpl>(bool condition, ServiceLifeTime lifeTime) where TImpl : T where T : class
+            => condition ? Register<T, TImpl>(lifeTime) : this;
+
+        /// <summary>
+        /// 条件注册（接口 → 实现，具名）
+        /// </summary>
+        public ModuleBuilder RegisterIf<T, TImpl>(bool condition, ServiceLifeTime lifeTime, string named) where TImpl : T where T : class
+            => condition ? Register<T, TImpl>(lifeTime, named) : this;
+
+        /// <summary>
+        /// 条件注册（接口 → 实现，带配置）
+        /// </summary>
+        public ModuleBuilder RegisterIf<T, TImpl>(bool condition, ServiceLifeTime lifeTime, Action<AutofacSingleBuilder> configure) where TImpl : T where T : class
+            => condition ? Register<T, TImpl>(lifeTime, configure) : this;
+
+        #endregion
+
         /// <summary>
         /// 注册同步拦截器，需要继承 <see cref="IInterceptor"/> 接口并实现
         /// </summary>
@@ -418,6 +578,43 @@ namespace Lycoris.Autofac.Extensions.Impl
             return this;
         }
 
+        /// <summary>
+        /// 注册同步拦截器并添加到模块级拦截器列表（等同于 RegisterInterceptor + InterceptedBy）
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        public ModuleBuilder RegisterInterceptorAndUse<T>(int? order = null) where T : class, IInterceptor
+        {
+            RegisterInterceptor<T>();
+            InterceptedBy<T>(order);
+            return this;
+        }
+
+        /// <summary>
+        /// 注册异步拦截器并添加到模块级拦截器列表（等同于 RegisterAsyncInterceptor + InterceptedBy）
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        public ModuleBuilder RegisterAsyncInterceptorAndUse<T>(int? order = null) where T : class, IAsyncInterceptor
+        {
+            RegisterAsyncInterceptor<T>();
+            if (order.HasValue && order.Value < 0)
+                throw new ArgumentOutOfRangeException(nameof(order), "range must be greater than or equal to 0");
+            order ??= InterceptorOptions.Count;
+            InterceptorOptions.Add(new InterceptorOption(typeof(T), order.Value));
+            return this;
+        }
+
+        /// <summary>
+        /// 自动扫描程序集中所有 IInterceptor / IAsyncInterceptor 实现并注册
+        /// </summary>
+        public ModuleBuilder RegisterAssemblyInterceptors()
+        {
+            AutoRegisterInterceptors = true;
+            return this;
+        }
 
         /// <summary>
         /// 注册启动任务，需要继承 <see cref="IHostedService"/> 接口并实现
@@ -435,12 +632,40 @@ namespace Lycoris.Autofac.Extensions.Impl
             return this;
         }
 
-        internal Type? AssemblyFilterType { get; private set; } = null;
-        internal Action<RegisterAssemblyBuilder>? AssemblyConfigure { get; private set; } = null;
+        internal readonly List<AssemblyFilterEntry> AssemblyFilterEntries = new();
+
+        internal sealed class AssemblyFilterEntry
+        {
+            public Type FilterType { get; }
+            public Action<RegisterAssemblyBuilder> Configure { get; }
+
+            public AssemblyFilterEntry(Type filterType, Action<RegisterAssemblyBuilder> configure)
+            {
+                FilterType = filterType;
+                Configure = configure;
+            }
+        }
+
+        internal readonly List<PredicateAssemblyFilterEntry> PredicateFilterEntries = new();
+
+        internal sealed class PredicateAssemblyFilterEntry
+        {
+            public Func<Type, bool> Predicate { get; }
+            public Action<RegisterAssemblyBuilder> Configure { get; }
+
+            public PredicateAssemblyFilterEntry(Func<Type, bool> predicate, Action<RegisterAssemblyBuilder> configure)
+            {
+                Predicate = predicate;
+                Configure = configure;
+            }
+        }
+
+        internal readonly List<Assembly> AdditionalAssemblies = new();
 
         /// <summary>
         /// 注册程序级中继承了泛型的实现类
         /// 注意: 使用了 <see cref="AutofacRegisterAttribute"/> 标注的服务，会被排除在外
+        /// 支持多次调用以添加不同的程序集扫描配置
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="configure"></param>
@@ -453,17 +678,43 @@ namespace Lycoris.Autofac.Extensions.Impl
 
         /// <summary>
         /// 注册程序级中继承了泛型的实现类
-        /// 注意: 使用了 <see cref="AutofacRegisterAttribute"/> 标注的服务，会被排除在外</summary>
+        /// 注意: 使用了 <see cref="AutofacRegisterAttribute"/> 标注的服务，会被排除在外
+        /// 支持多次调用以添加不同的程序集扫描配置
+        /// </summary>
         /// <param name="type"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
         public ModuleBuilder RegisterAssemblyBy(Type type, Action<RegisterAssemblyBuilder> configure)
         {
             if (!type.IsClass && !type.IsInterface)
-                throw new Exception("type must be class or interface");
+                throw new ArgumentException("type must be a class or interface", nameof(type));
 
-            this.AssemblyFilterType = type;
-            this.AssemblyConfigure = configure;
+            AssemblyFilterEntries.Add(new AssemblyFilterEntry(type, configure));
+            return this;
+        }
+
+        /// <summary>
+        /// 按命名约定扫描并注册程序集中的服务（例如所有以 "Service" 结尾的类匹配 "I*Service" 接口）
+        /// 注意: 使用了 <see cref="AutofacRegisterAttribute"/> 标注的服务，会被排除在外
+        /// 支持多次调用以添加不同的扫描规则
+        /// </summary>
+        /// <param name="predicate">类型筛选条件</param>
+        /// <param name="configure">注册配置</param>
+        /// <returns></returns>
+        public ModuleBuilder RegisterAssemblyByConvention(Func<Type, bool> predicate, Action<RegisterAssemblyBuilder> configure)
+        {
+            PredicateFilterEntries.Add(new PredicateAssemblyFilterEntry(predicate, configure));
+            return this;
+        }
+
+        /// <summary>
+        /// 从指定程序集扫描所有标记了 <see cref="AutofacRegisterAttribute"/> 的服务并注册
+        /// </summary>
+        /// <param name="assembly">目标程序集</param>
+        /// <returns></returns>
+        public ModuleBuilder RegisterAllFromAssembly(Assembly assembly)
+        {
+            AdditionalAssemblies.Add(assembly);
             return this;
         }
 
@@ -534,6 +785,8 @@ namespace Lycoris.Autofac.Extensions.Impl
                     Self = true,
                     EnableInterceptor = builder.EnableInterceptor,
                     PropertiesAutowired = builder.PropertiesAutowired,
+                    InterceptionType = builder.InterceptionType,
+                    ExcludeInterceptor = builder.ExcludeInterceptor,
                 },
                 Interceptors = builder.Interceptors
             });
@@ -592,7 +845,10 @@ namespace Lycoris.Autofac.Extensions.Impl
                 {
                     EnableInterceptor = builder.EnableInterceptor,
                     PropertiesAutowired = builder.PropertiesAutowired,
-                    MultipleNamed = builder.Named
+                    MultipleNamed = builder.Named,
+                    Key = builder.Key,
+                    InterceptionType = builder.InterceptionType,
+                    ExcludeInterceptor = builder.ExcludeInterceptor,
                 },
                 Interceptors = builder.Interceptors
             });

@@ -71,11 +71,7 @@ namespace Lycoris.Autofac.Extensions
             if (!GlobalInterceptor.Any(x => x.Type == type))
             {
                 order ??= GlobalInterceptor.Count;
-                GlobalInterceptor.Add(new InterceptorOption()
-                {
-                    Type = type,
-                    Order = order.Value
-                });
+                GlobalInterceptor.Add(new InterceptorOption(type, order.Value));
             }
 
             return this;
@@ -111,7 +107,7 @@ namespace Lycoris.Autofac.Extensions
             foreach (var item in LycorisRegisterModules)
             {
                 item.HostRegister(builder.Host);
-                item.SerivceRegister(builder.Services);
+                item.ServiceRegister(builder.Services);
             }
         }
 
@@ -125,7 +121,7 @@ namespace Lycoris.Autofac.Extensions
             {
                 foreach (var item in LycorisRegisterModules)
                 {
-                    item.SerivceRegister(services);
+                    item.ServiceRegister(services);
                 }
             });
         }
@@ -146,7 +142,7 @@ namespace Lycoris.Autofac.Extensions
                 {
                     // 获取需要注册的服务 
                     var services = item.Build(GlobalInterceptor);
-                    registerServices.AddRange(services ?? new List<LycorisRegisterService>());
+                    registerServices.AddRange(services);
                 }
             }
 

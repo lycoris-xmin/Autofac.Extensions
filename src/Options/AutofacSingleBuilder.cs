@@ -18,6 +18,16 @@ namespace Lycoris.Autofac.Extensions.Options
         public bool EnableInterceptor { get; set; } = false;
 
         /// <summary>
+        /// AOP 拦截类型，接口拦截(默认)或类拦截
+        /// </summary>
+        public InterceptionType InterceptionType { get; set; } = InterceptionType.Interface;
+
+        /// <summary>
+        /// 排除指定的拦截器类型
+        /// </summary>
+        public Type? ExcludeInterceptor { get; set; } = null;
+
+        /// <summary>
         /// 拦截器列表
         /// </summary>
         internal List<InterceptorOption> Interceptors = new();
@@ -28,6 +38,12 @@ namespace Lycoris.Autofac.Extensions.Options
         public string? Named { get; set; }
 
         /// <summary>
+        /// 多实现类键 (Autofac 8.x Keyed 服务, 任意对象类型)
+        /// 与 Named 互斥，只能设置其中一个
+        /// </summary>
+        public object? Key { get; set; }
+
+        /// <summary>
         /// 使用Aop拦截器
         /// </summary>
         /// <typeparam name="TInterceptor"></typeparam>
@@ -35,11 +51,7 @@ namespace Lycoris.Autofac.Extensions.Options
         /// <returns></returns>
         public AutofacSingleBuilder InterceptedBy<TInterceptor>(int? order = null) where TInterceptor : IInterceptor
         {
-            Interceptors.Add(new InterceptorOption()
-            {
-                Type = typeof(TInterceptor),
-                Order = order ?? Interceptors.Count
-            }); ;
+            Interceptors.Add(new InterceptorOption(typeof(TInterceptor), order ?? Interceptors.Count));
 
             return this;
         }

@@ -7,6 +7,8 @@ namespace Lycoris.Autofac.Extensions.Options
     /// </summary>
     internal class NullModule : Module
     {
+        internal static readonly NullModule Instance = new();
+
         protected override void Load(ContainerBuilder builder)
         {
             // Method intentionally left empty.
