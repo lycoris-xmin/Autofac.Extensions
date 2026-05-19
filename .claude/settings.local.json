@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(cmd *)",
-      "Bash(dotnet build *)",
-      "WebSearch"
-    ]
-  }
-}
