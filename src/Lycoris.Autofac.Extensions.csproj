@@ -8,9 +8,8 @@
 		<Description>Autofac封装扩展，支持特性自动注册，也支持手动注册，兼容原生Module</Description>
 		<PackageIcon>
 		</PackageIcon>
-		<VersionPrefix>8.1.3</VersionPrefix>
-		<PackageReadmeFile>
-		</PackageReadmeFile>
+		<VersionPrefix>8.2.0</VersionPrefix>
+		<PackageReadmeFile>Readme.md</PackageReadmeFile>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageProjectUrl>https://github.com/lycoris-xmin/Autofac.Extensions</PackageProjectUrl>
@@ -18,6 +17,10 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<None Include="..\Readme.md">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+		</None>
 		<PackageReference Include="Autofac" Version="8.3.0" />
 		<PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
 		<PackageReference Include="Autofac.Extras.DynamicProxy" Version="7.1.0" />
