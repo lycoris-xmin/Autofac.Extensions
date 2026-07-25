@@ -13,7 +13,7 @@ namespace AutofacModule
             builder.RegisterScoped(typeof(ITestGencService<>), typeof(TestsGencService<>), "456");
         }
 
-        public override void SerivceRegister(IServiceCollection services)
+        public override void ServiceRegister(IServiceCollection services)
         {
             services.AddScoped<ISerService, SerService>();
         }

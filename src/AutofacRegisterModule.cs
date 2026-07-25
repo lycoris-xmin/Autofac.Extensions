@@ -139,9 +139,6 @@ namespace Lycoris.Autofac.Extensions
 
                 entry.Configure(option);
 
-                if (!entry.FilterType.IsInterface)
-                    option.Self = true;
-
                 var _builder = option.BuildAutofacSingleBuilder();
 
                 foreach (var type in types)
